@@ -1,9 +1,10 @@
-#include <bits/stdc++.h>
+#include <iostream>
+#include <vector>
+#include <fstream>
+
 using namespace std;
-typedef vector<string> vs;
 
-
-string greedy(vs &set, double th, int n, int m);
+string greedy(vector<string> &set, double th, int n, int m);
 
 int main(int argc, char *argv[]){
 	string instancia;
@@ -15,7 +16,7 @@ int main(int argc, char *argv[]){
 	}
 
 	ifstream archivo(instancia);
-	vs set;
+	vector<string> set;
 	string gen;
 
 	while(archivo >> gen) set.push_back(gen);
@@ -30,7 +31,7 @@ int main(int argc, char *argv[]){
 	return 0;
 }
 
-string greedy(vs &set, double th, int n, int m){
+string greedy(vector<string> &set, double th, int n, int m){
 	string sol = "hola";
 
 	return sol;
