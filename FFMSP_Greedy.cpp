@@ -2,12 +2,9 @@
 #include <vector>
 #include <fstream>
 #include <string.h>
-#include <stack>
 #include <map>
-#include <set>
 #include <random>
 #include <ctime>
-#include <algorithm>
 using namespace std;
 
 
