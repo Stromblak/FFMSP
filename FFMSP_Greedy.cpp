@@ -40,48 +40,56 @@ int main(int argc, char *argv[]){
 	return 0;
 }
 
+
 int greedy(vector<string> &setGen, double th, int n, int m){
 	vector<char> bases = {'A', 'C', 'G', 'T'};
 	vector<int> hamming(n);
-	map<char, int> difBases; // cantidad strings donde porcentaje hamming >= th
+	map<char, int> cumpleTH; // contador cantidad strings donde porcentaje hamming >= th
 	string sol;
 
+	// contar cuanto se repiten las bases en cada columna
+	vector<map<char, int>> contador(m);
 	for(int col=0; col<m; col++){  //para cada columna	
-		difBases['A'] = 0;
-		difBases['C'] = 0;
-		difBases['G'] = 0;
-		difBases['T'] = 0;
+		contador[col]['A'] = 0;
+		contador[col]['C'] = 0;
+		contador[col]['G'] = 0;
+		contador[col]['T'] = 0;
+		for(int j=0; j<n; j++) contador[col][ setGen[j][col] ]++;
+	}
+
+	for(int col=0; col<m; col++){  //para cada columna	
+		cumpleTH['A'] = 0;
+		cumpleTH['C'] = 0;
+		cumpleTH['G'] = 0;
+		cumpleTH['T'] = 0;
 
 		for(char base: bases){	 // para cada base
 			for(int j=0; j<n; j++){	 //para cada gen
 				if(setGen[j][col] != base){
 					double porcentajeDif = (double)(hamming[j] + 1) / (col+1);
-					if(porcentajeDif >= th) difBases[base]++;
+					if(porcentajeDif >= th) cumpleTH[base]++;
 				}
 			}
 		}
 
+		// encontrar a los maximos de cumpleTH
 		int bMAx = 0;
 		vector<char> maximos;
-		for(pair<char, int> p: difBases) bMAx = max(bMAx, p.second);
-		for(pair<char, int> p: difBases) if(p.second == bMAx) maximos.push_back(p.first);
+		for(pair<char, int> p: cumpleTH) bMAx = max(bMAx, p.second);
+		for(pair<char, int> p: cumpleTH) if(p.second == bMAx) maximos.push_back(p.first);
 
-		char actual;
-		if(maximos.size() > 1){
-			map<char, int> counterBases;
-			counterBases['A'] = 0;
-			counterBases['C'] = 0;
-			counterBases['G'] = 0;
-			counterBases['T'] = 0;
-			for(int j=0; j<n; j++) counterBases[ setGen[j][col] ]++;
-
-			int bMAx2 = 0;
-			vector<char> maximos2;
-			for(pair<char, int> p: counterBases) if(p.second == bMAx2) maximos2.push_back(p.first);
-
-			if(maximos2.size() > 1) actual = maximos2[ rand() % maximos2.size() ];
+		// encontrar cuanto se repiten los maximos en la columna
+		map<char, int> contadorMaximos;
+		for(char c: maximos) contadorMaximos[c] = contador[col][c];
 		
-		}else actual = maximos[0];
+		// encontrar los maximos de las repeticiones de columnas
+		bMAx = 0;
+		maximos.clear();
+		for(pair<char, int> p: contadorMaximos) bMAx = max(bMAx, p.second);
+		for(pair<char, int> p: contadorMaximos) if(p.second == bMAx) maximos.push_back(p.first);
+		
+		// elegir al azar entre los maximos de lo anterior
+		char actual = maximos[ rand() % maximos.size() ];
 
 
 		for(int j=0; j<n; j++) if(setGen[j][col] != actual) hamming[j]++;	
