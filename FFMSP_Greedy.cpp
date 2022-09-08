@@ -46,13 +46,7 @@ int greedy(vector<string> &setGen, double th, int n, int m){
 
 	// contar cuanto se repiten las bases en cada columna
 	vector<map<char, int>> contador(m);
-	for(int col=0; col<m; col++){  //para cada columna	
-		contador[col]['A'] = 0;
-		contador[col]['C'] = 0;
-		contador[col]['G'] = 0;
-		contador[col]['T'] = 0;
-		for(int j=0; j<n; j++) contador[col][ setGen[j][col] ]++;
-	}
+	for(int col=0; col<m; col++) for(int j=0; j<n; j++) contador[col][ setGen[j][col] ]++;
 
 	for(int col=0; col<m; col++){  //para cada columna	
 		cumpleTH['A'] = 0;
