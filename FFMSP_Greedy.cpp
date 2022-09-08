@@ -62,10 +62,11 @@ int greedy(vector<string> &setGen, double th, int n, int m){
 
 		for(char base: bases){	 // para cada base
 			for(int j=0; j<n; j++){	 //para cada gen
-				if(setGen[j][col] != base){
-					double porcentajeDif = (double)(hamming[j] + 1) / (col+1);
-					if(porcentajeDif >= th) cumpleTH[base]++;
-				}
+				double porcentajeDif;
+				if(setGen[j][col] != base) porcentajeDif = (double)(hamming[j] + 1) / (col+1);
+				else porcentajeDif = (double)(hamming[j]) / (col+1);
+
+				if(porcentajeDif >= th) cumpleTH[base]++;
 			}
 		}
 
