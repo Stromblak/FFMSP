@@ -79,15 +79,14 @@ int greedy(vector<string> &setGen, double th, int n, int m){
 		map<char, int> contadorMaximos;
 		for(char c: maximos) contadorMaximos[c] = contador[col][c];
 		
-		// encontrar los maximos de las repeticiones de columnas
-		bMAx = 0;
-		maximos.clear();
-		for(pair<char, int> p: contadorMaximos) bMAx = max(bMAx, p.second);
-		for(pair<char, int> p: contadorMaximos) if(p.second == bMAx) maximos.push_back(p.first);
+		// encontrar los minimos de las repeticiones de columnas
+		int bMin = n+1;
+		vector<char> minRepeticion;
+		for(pair<char, int> p: contadorMaximos) bMin = min(bMin, p.second);
+		for(pair<char, int> p: contadorMaximos) if(p.second == bMin) minRepeticion.push_back(p.first);
 		
-		// elegir al azar entre los maximos de lo anterior
-		char actual = maximos[ rand() % maximos.size() ];
-
+		// elegir al azar entre los minimos de lo anterior
+		char actual = minRepeticion[ rand() % minRepeticion.size() ];
 
 		for(int j=0; j<n; j++) if(setGen[j][col] != actual) hamming[j]++;	
 		sol += actual;
