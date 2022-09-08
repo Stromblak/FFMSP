@@ -74,7 +74,19 @@ int greedy(vector<string> &setGen, double th, int n, int m){
 		for(pair<char, int> p: difBases) bMAx = max(bMAx, p.second);
 		for(pair<char, int> p: difBases) if(p.second == bMAx) maximos.push_back(p.first);
 
-		char actual = maximos[ rand() % maximos.size() ];
+		char actual;
+		if(maximos.size() > 1){
+			map<char, int> counterBases;
+			for(int j=0; j<n; j++) counterBases[ setGen[j][col] ]++;
+
+			int bMAx2 = 0;
+			vector<char> maximos2;
+			for(pair<char, int> p: counterBases) if(p.second == bMAx2) maximos2.push_back(p.first);
+
+			if(maximos2.size() > 1)actual = maximos2[ rand() % maximos2.size() ];
+		
+		}else actual = maximos[0];
+
 		sol += actual;
 
 		for(int j=0; j<n; j++) if(setGen[j][col] != actual) hamming[j]++;	
