@@ -1,3 +1,4 @@
+
 #include <iostream>
 #include <vector>
 #include <fstream>
@@ -65,20 +66,18 @@ int greedy(vector<string> &setGen, double th, int n, int m){
 		}
 
 		// encontrar a los maximos de cumpleTH
-		int bMAx = 0;
-		vector<char> maximos;
+		int bMAx = -1;
 		for(pair<char, int> p: cumpleTH) bMAx = max(bMAx, p.second);
+
+		vector<char> maximos;
 		for(pair<char, int> p: cumpleTH) if(p.second == bMAx) maximos.push_back(p.first);
 
-		// encontrar cuanto se repiten los maximos en la columna
-		map<char, int> contadorMaximos;
-		for(char c: maximos) contadorMaximos[c] = contador[col][c];
-		
-		// encontrar los minimos de las repeticiones de columnas
+		// encontrar cuantos se repiten los maximos en la columna, eligir los minimos
 		int bMin = n+1;
+		for(char c: maximos) bMin = min(bMin, contador[col][c]);
+
 		vector<char> minRepeticion;
-		for(pair<char, int> p: contadorMaximos) bMin = min(bMin, p.second);
-		for(pair<char, int> p: contadorMaximos) if(p.second == bMin) minRepeticion.push_back(p.first);
+		for(char c: maximos) if(contador[col][c] == bMin) minRepeticion.push_back(c);
 		
 		// elegir al azar entre los minimos de lo anterior
 		char actual = minRepeticion[ rand() % minRepeticion.size() ];
@@ -88,7 +87,7 @@ int greedy(vector<string> &setGen, double th, int n, int m){
 	}
 
 	int calidad = 0;
-	for(int h: hamming) if(  (double)h / m  >= th) calidad++;
+	for(int h: hamming) if( (double)h / m  >= th ) calidad++;
 
 	return calidad;
 }
