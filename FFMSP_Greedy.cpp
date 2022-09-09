@@ -5,15 +5,12 @@
 #include <map>
 #include <random>
 #include <ctime>
-#include <cmath>
 #include <algorithm>
-
 using namespace std;
 
 
 int greedy(vector<string> &setGen, double th, int n, int m);
 int greedy_aleatorizado(vector<string> &setGen, double th, int n, int m, double a);
-
 
 int main(int argc, char *argv[]){
 	string instancia;
