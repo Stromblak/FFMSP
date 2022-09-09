@@ -40,7 +40,7 @@ int main(int argc, char *argv[]){
 
 	double iter = 500;
 	for(int i=0; i<iter; i++){
-		promedio += greedy(set, threshold, n, m);
+		//promedio += greedy(set, threshold, n, m);
 		promedioRandom += greedy_aleatorizado(set, threshold, n, m, alpha);
 	}
 
@@ -134,7 +134,7 @@ int greedy_aleatorizado(vector<string> &setGen, double th, int n, int m, double 
 		int col = par.second;
 		columnasListas++;
 		
-		if((rand()%101)/100.f >= a){
+		if((rand()%101)/100.f <= a){
 			char solBase = bases[rand()%4];
 			for(int j=0; j<n; j++) if(setGen[j][col] != solBase) hamming[j]++;	
 			sol[col] = solBase;
