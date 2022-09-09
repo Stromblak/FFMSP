@@ -133,6 +133,14 @@ int greedy_aleatorizado(vector<string> &setGen, double th, int n, int m, double 
 	for(auto par: indices){  //para cada columna	
 		int col = par.second;
 		columnasListas++;
+		
+		if((rand()%101)/100.f >= a){
+			char solBase = bases[rand()%4];
+			for(int j=0; j<n; j++) if(setGen[j][col] != solBase) hamming[j]++;	
+			sol[col] = solBase;
+			continue;
+		}
+		
 		cumpleTH['A'] = 0;
 		cumpleTH['C'] = 0;
 		cumpleTH['G'] = 0;
@@ -146,26 +154,20 @@ int greedy_aleatorizado(vector<string> &setGen, double th, int n, int m, double 
 			}
 		}
 
-		char solBase;
-		if( (rand()%101)/100.f >= a ){
-			// encontrar a los maximos de cumpleTH
-			int ThMax = -1;
-			for(auto par: cumpleTH) ThMax = max(ThMax, par.second);
-			vector<char> maximos;
-			for(auto par: cumpleTH) if(par.second == ThMax) maximos.push_back(par.first);
+		// encontrar a los maximos de cumpleTH
+		int ThMax = -1;
+		for(auto par: cumpleTH) ThMax = max(ThMax, par.second);
+		vector<char> maximos;
+		for(auto par: cumpleTH) if(par.second == ThMax) maximos.push_back(par.first);
 
-			// encontrar cuantos se repiten los maximos en la columna, eligir los minimos
-			int repMin = n+1;
-			for(char c: maximos) repMin = min(repMin, contador[col][c]);
-			vector<char> minRepeticion;
-			for(char c: maximos) if(contador[col][c] == repMin) minRepeticion.push_back(c);
-			
-			// elegir al azar entre los minimos de lo anterior
-			char solBase = minRepeticion[ rand() % minRepeticion.size() ];
+		// encontrar cuantos se repiten los maximos en la columna, eligir los minimos
+		int repMin = n+1;
+		for(char c: maximos) repMin = min(repMin, contador[col][c]);
+		vector<char> minRepeticion;
+		for(char c: maximos) if(contador[col][c] == repMin) minRepeticion.push_back(c);
 
-			solBase = minRepeticion[ rand() % minRepeticion.size() ];
-		}else solBase = bases[rand()%4];
-
+		// elegir al azar entre los minimos de lo anterior
+		char solBase = minRepeticion[ rand() % minRepeticion.size() ];
 		for(int j=0; j<n; j++) if(setGen[j][col] != solBase) hamming[j]++;	
 		sol[col] = solBase;
 	}
