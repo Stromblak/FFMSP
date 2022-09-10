@@ -9,7 +9,7 @@
 using namespace std;
 
 
-int greedy(vector<string> &setGen, double th, int n, int m);
+int greedy_random(vector<string> &setGen, double th, int n, int m, double a);
 
 int main(int argc, char *argv[]){
 	string instancia;
@@ -20,6 +20,7 @@ int main(int argc, char *argv[]){
 	for(int i=0; i<argc; i++){
 		if( !strcmp(argv[i], "-i" ) ) instancia = argv[i+1];
 		if( !strcmp(argv[i], "-th") ) threshold = atof(argv[i+1]);
+		if( !strcmp(argv[i], "-a" ) ) alpha = atof(argv[i+1]);
 	}
 
 	ifstream archivo(instancia);
@@ -32,11 +33,11 @@ int main(int argc, char *argv[]){
 	int n = set.size();
 	int m = set[0].size();
 
-	cout << greedy(set, threshold, n, m) << endl;
+	cout << greedy_random(set, threshold, n, m, alpha) << endl;
 	return 0;
 }
 
-int greedy(vector<string> &setGen, double th, int n, int m){
+int greedy_random(vector<string> &setGen, double th, int n, int m, double a){
 	vector<char> bases = {'A', 'C', 'G', 'T'};
 	vector<int> hamming(n);
 	map<char, int> cumpleTH; // contador cantidad strings donde porcentaje hamming >= th
@@ -44,7 +45,7 @@ int greedy(vector<string> &setGen, double th, int n, int m){
 	vector<map<char, int>> contador(m);	// contar cuanto se repiten las bases en cada columna
 	for(int col=0; col<m; col++) for(int j=0; j<n; j++) contador[col][ setGen[j][col] ]++;
 
-	//ordenar los indices de acuerdo al maximo en la columna, mayor a menor
+	//ordenar los indices de acuerdo al maximo en la columna, menor a mayor
 	vector<pair<int, int>> indices;
 	for(int i=0; i<m; i++){
 		int comparador = -1;
@@ -58,7 +59,14 @@ int greedy(vector<string> &setGen, double th, int n, int m){
 	for(auto par: indices){  //para cada columna	
 		int col = par.second;
 		columnasListas++;
-
+		
+		if(rand()%101 <= a*100){
+			char solBase = bases[rand()%4];
+			for(int j=0; j<n; j++) if(setGen[j][col] != solBase) hamming[j]++;	
+			sol[col] = solBase;
+			continue;
+		}
+		
 		cumpleTH['A'] = 0;
 		cumpleTH['C'] = 0;
 		cumpleTH['G'] = 0;
@@ -83,10 +91,9 @@ int greedy(vector<string> &setGen, double th, int n, int m){
 		for(char c: maximos) repMin = min(repMin, contador[col][c]);
 		vector<char> minRepeticion;
 		for(char c: maximos) if(contador[col][c] == repMin) minRepeticion.push_back(c);
-		
+
 		// elegir al azar entre los minimos de lo anterior
 		char solBase = minRepeticion[ rand() % minRepeticion.size() ];
-
 		for(int j=0; j<n; j++) if(setGen[j][col] != solBase) hamming[j]++;	
 		sol[col] = solBase;
 	}
