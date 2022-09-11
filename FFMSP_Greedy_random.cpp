@@ -50,9 +50,11 @@ int greedy_random(vector<string> &setGen, double th, int n, int m, double a){
 	//ordenar los indices de acuerdo al maximo en la columna, menor a mayor
 	vector<pair<int, int>> indices;
 	for(int i=0; i<m; i++){
-		int comparador = -1;
-		for(auto par: contador[i]) comparador = max(par.second, comparador);
-		indices.push_back( {comparador, i} );
+		int mayor = -1;
+		vector<char> mayores;
+		for(auto par: contador[i]) mayor = max(par.second, mayor);
+		for(auto par: contador[i]) if(par.second == mayor) mayores.push_back(par.first);
+		indices.push_back( {mayores[ rand() % mayores.size() ], i} );
 	}
 	sort(indices.begin(), indices.end(), greater<>());
 
