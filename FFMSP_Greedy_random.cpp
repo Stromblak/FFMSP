@@ -76,9 +76,9 @@ int greedy_random(vector<string> &setGen, double th, int n, int m, double a){
 		
 		for(char base: bases){	 // para cada base a testear
 			for(int j=0; j<n; j++){	 //para cada base en la columna
-				if(hamming[j] + 1*(setGen[j][col] != base) >= th*columnasListas){
-					cumpleTH[base]++;
-				}
+				int hammingAux = hamming[j];
+				if(setGen[j][col] != base) hammingAux += 1;
+				if(hammingAux >= th*columnasListas) cumpleTH[base]++;
 			}
 		}
 
