@@ -42,7 +42,9 @@ int greedy(vector<string> &setGen, double th, int n, int m){
 	map<char, int> cumpleTH; // contador cantidad strings donde dist hamming >= th*m
 
 	vector<map<char, int>> contador(m);	// contar cuanto se repiten las bases en cada columna
-	for(int col=0; col<m; col++) for(int j=0; j<n; j++) contador[col][ setGen[j][col] ]++;
+	for(int col=0; col<m; col++)
+		for(int j=0; j<n; j++) 
+			contador[col][ setGen[j][col] ]++;
 
 	//ordenar los indices de acuerdo al maximo en la columna, mayor a menor
 	vector<pair<int, int>> indices;
@@ -65,9 +67,9 @@ int greedy(vector<string> &setGen, double th, int n, int m){
 
 		for(char base: bases){	 // para cada base a testear
 			for(int j=0; j<n; j++){	 //para cada base en la columna
-				if(hamming[j] + 1*(setGen[j][col] != base) >= th*columnasListas){
-					cumpleTH[base]++;
-				}
+				int hammingAux = hamming[j];
+				if(setGen[j][col] != base) hammingAux += 1;
+				if(hammingAux >= th*columnasListas) cumpleTH[base]++;
 			}
 		}
 
@@ -90,6 +92,9 @@ int greedy(vector<string> &setGen, double th, int n, int m){
 
 	// calcular calidad de la solucion
 	int calidad = 0;
-	for(int h: hamming) if(h >= th*m) calidad++;
+	for(int h: hamming) 
+		if(h >= th*m) 
+			calidad++;
+			
 	return calidad;
 }

@@ -43,7 +43,9 @@ int greedy_random(vector<string> &setGen, double th, int n, int m, double a){
 	map<char, int> cumpleTH; // contador cantidad strings donde porcentaje hamming >= th
 
 	vector<map<char, int>> contador(m);	// contar cuanto se repiten las bases en cada columna
-	for(int col=0; col<m; col++) for(int j=0; j<n; j++) contador[col][ setGen[j][col] ]++;
+	for(int col=0; col<m; col++) 
+		for(int j=0; j<n; j++) 
+			contador[col][ setGen[j][col] ]++;
 
 	//ordenar los indices de acuerdo al maximo en la columna, menor a mayor
 	vector<pair<int, int>> indices;
