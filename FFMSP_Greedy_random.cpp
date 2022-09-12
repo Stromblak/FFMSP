@@ -5,6 +5,7 @@
 #include <map>
 #include <random>
 #include <ctime>
+#includr <cmath>
 #include <algorithm>
 using namespace std;
 
@@ -76,7 +77,7 @@ int greedy_random(vector<string> &setGen, double th, int n, int m, double a){
 			for(int j=0; j<n; j++){	 //para cada base en la columna
 				int hammingAux = hamming[j];
 				if(setGen[j][col] != base) hammingAux += 1;
-				if(hammingAux >= th*columnasListas) cumpleTH[base]++;
+				if( hammingAux >= floor(th*columnasListas) ) cumpleTH[base]++;
 			}
 		}
 
@@ -98,6 +99,6 @@ int greedy_random(vector<string> &setGen, double th, int n, int m, double a){
 	}
 
 	int calidad = 0;
-	for(int h: hamming) if(h >= th*m) calidad++;
+	for(int h: hamming) if( h >= floor(th*m) ) calidad++;
 	return calidad;
 }
