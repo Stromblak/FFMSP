@@ -5,7 +5,7 @@
 #include <map>
 #include <random>
 #include <ctime>
-#includr <cmath>
+#include <cmath>
 #include <algorithm>
 using namespace std;
 
