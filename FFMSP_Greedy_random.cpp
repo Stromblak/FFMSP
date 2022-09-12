@@ -55,7 +55,7 @@ int greedy_random(vector<string> &setGen, double th, int n, int m, double a){
 		for(auto par: contador[i]) mayor = max(par.second, mayor);
 		indices.push_back( {mayor, i} );
 	}
-	sort(indices.begin(), indices.end(), greater<>());
+	sort(indices.begin(), indices.end(), greater<pair<int, int>>());
 
 	string sol(m, ' ');
 	int columnasListas = 0;
