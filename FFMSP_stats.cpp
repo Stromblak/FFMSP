@@ -7,6 +7,8 @@
 #include <ctime>
 #include <algorithm>
 #include <chrono>
+#include <iomanip>
+
 using namespace std;
 using namespace chrono;
 
@@ -68,7 +70,7 @@ void stats(double th){
 			auto start = high_resolution_clock::now();
 			for(int i=0; i<10; i++) calidades.push_back( greedy_random(set, th, n, m, 0.9) );
 			auto finish = high_resolution_clock::now();
-			tiempos.push_back(duration_cast<microseconds>(finish - start).count()/10);
+			tiempos.push_back(duration_cast<milliseconds>(finish - start).count()/10);
 		}
 
 		double media = 0;
@@ -88,6 +90,8 @@ void stats(double th){
 		for(auto c: tiempos) tdesviacion += (c-tmedia)*(c-tmedia);
 		tdesviacion = sqrt(tdesviacion/tiempos.size());
 
+		cout << fixed;
+		cout << setprecision(2);
 
 		cout << "Calidad Media: " << media << endl;
 		cout << "Calidad desviacion: " << desviacion << endl;
