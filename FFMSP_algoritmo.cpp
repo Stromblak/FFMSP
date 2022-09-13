@@ -30,11 +30,7 @@ int greedy_random(vector<string> &setGen, double th, int n, int m, double a){
 	for(auto par: indices){  // para cada columna	
 		int col = par.second;
 		columnasListas++;
-		cumpleTH['A'] = 0;
-		cumpleTH['C'] = 0;
-		cumpleTH['G'] = 0;
-		cumpleTH['T'] = 0;
-
+		
 		if(1 + rand()%100 <= a*100){
 			sol[col] = bases[rand()%4];
 			for(int j=0; j<n; j++) if(setGen[j][col] != sol[col]) hamming[j]++;	
@@ -42,6 +38,7 @@ int greedy_random(vector<string> &setGen, double th, int n, int m, double a){
 		}
 		
 		for(char base: bases){	 // para cada base a testear
+			cumpleTH[base] = 0;
 			for(int j=0; j<n; j++){	 //para cada base en la columna
 				int hammingAux = hamming[j];
 				if(setGen[j][col] != base) hammingAux += 1;
