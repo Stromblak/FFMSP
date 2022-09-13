@@ -6,7 +6,7 @@
 using namespace std;
 
 
-int greedy_random(vector<string> &setGen, double th, int n, int m, double a){
+int greedy_random(vector<string> &dataset, double th, int n, int m, double a){
 	vector<char> bases = {'A', 'C', 'G', 'T'};
 	vector<int> hamming(n);
 	map<char, int> cumpleTH; // contador cantidad strings donde porcentaje hamming >= th
@@ -14,7 +14,7 @@ int greedy_random(vector<string> &setGen, double th, int n, int m, double a){
 	vector<map<char, int>> contador(m);	// contar cuanto se repiten las bases en cada columna
 	for(int col=0; col<m; col++) 
 		for(int j=0; j<n; j++) 
-			contador[col][ setGen[j][col] ]++;
+			contador[col][ dataset[j][col] ]++;
 
 	//ordenar los indices de acuerdo al menor en la columna
 	vector<pair<int, int>> indices;
@@ -33,7 +33,7 @@ int greedy_random(vector<string> &setGen, double th, int n, int m, double a){
 		
 		if(1 + rand()%100 <= a*100){
 			sol[col] = bases[rand()%4];
-			for(int j=0; j<n; j++) if(setGen[j][col] != sol[col]) hamming[j]++;	
+			for(int j=0; j<n; j++) if(dataset[j][col] != sol[col]) hamming[j]++;	
 			continue;
 		}
 		
@@ -41,7 +41,7 @@ int greedy_random(vector<string> &setGen, double th, int n, int m, double a){
 			cumpleTH[base] = 0;
 			for(int j=0; j<n; j++){	 //para cada base en la columna
 				int hammingAux = hamming[j];
-				if(setGen[j][col] != base) hammingAux += 1;
+				if(dataset[j][col] != base) hammingAux += 1;
 				if( hammingAux >= floor(th*columnasListas) ) cumpleTH[base]++;
 			}
 		}
@@ -60,7 +60,7 @@ int greedy_random(vector<string> &setGen, double th, int n, int m, double a){
 		
 		// elegir al azar entre los minimos y actualizar dist hamming
 		sol[col] = minRepeticion[ rand() % minRepeticion.size() ];
-		for(int j=0; j<n; j++) if(setGen[j][col] != sol[col]) hamming[j]++;	
+		for(int j=0; j<n; j++) if(dataset[j][col] != sol[col]) hamming[j]++;	
 	}
 
 	int calidad = 0;
@@ -68,6 +68,6 @@ int greedy_random(vector<string> &setGen, double th, int n, int m, double a){
 	return calidad;
 }
 
-int greedy(vector<string> &setGen, double th, int n, int m){
-	greedy_random(setGen, th, n, m, 0);
+int greedy(vector<string> &dataset, double th, int n, int m){
+	greedy_random(dataset, th, n, m, 0);
 }
