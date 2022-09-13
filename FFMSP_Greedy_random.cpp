@@ -3,7 +3,7 @@
 #include <fstream>
 #include <string.h>
 #include <ctime>
-#include "FFMSP_algoritmo.cpp"
+#include "FFMSP_heuristica.cpp"
 using namespace std;
 
 
