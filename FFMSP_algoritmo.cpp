@@ -31,7 +31,7 @@ int greedy_random(vector<string> &dataset, double th, int n, int m, double a){
 		int col = par.second;
 		columnasListas++;
 		
-		if(1 + rand()%100 <= a*100){
+		if(rand()%100 < a*100){
 			sol[col] = bases[rand()%4];
 			for(int j=0; j<n; j++) if(dataset[j][col] != sol[col]) hamming[j]++;	
 			continue;
