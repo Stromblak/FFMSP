@@ -35,12 +35,7 @@ int main(int argc, char *argv[]){
 	int n = set.size();
 	int m = set[0].size();
 
-
-	auto start1 = chrono::high_resolution_clock::now();
-	greedy(set, threshold, n, m);
-	auto finish1 = chrono::high_resolution_clock::now();
-	auto duration1 = chrono::duration_cast<chrono::milliseconds>(finish1-start1).count();
-	cout << duration1 << endl;
+	cout << greedy(set, threshold, n, m) << endl;
 	return 0;
 }
 
