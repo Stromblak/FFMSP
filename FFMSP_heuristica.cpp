@@ -16,14 +16,13 @@ int greedy_random(vector<string> &dataset, double th, int n, int m, double a){
 		for(int j=0; j<n; j++) 
 			contador[col][ dataset[j][col] ]++;
 
-	//ordenar los indices de acuerdo al menor en la columna
 	vector<pair<int, int>> indices;
 	for(int i=0; i<m; i++){
-		int menor = n+1;
-		for(auto par: contador[i]) menor = min(par.second, menor);
-		indices.push_back( {menor, i} );
+		int mayor = -1;
+		for(auto par: contador[i]) mayor = max(par.second, mayor);
+		indices.push_back( {mayor, i} );
 	}
-	sort(indices.begin(), indices.end());
+	sort(indices.begin(), indices.end(), greater<pair<int, int>>());
 
 	string sol(m, ' ');
 	int columnasListas = 0;
