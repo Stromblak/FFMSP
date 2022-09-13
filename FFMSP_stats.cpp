@@ -5,7 +5,7 @@
 #include <map>
 #include <chrono>
 #include <iomanip>
-#include "FFMSP_algoritmo.cpp"
+#include "FFMSP_heuristica.cpp"
 
 using namespace std;
 using namespace chrono;
