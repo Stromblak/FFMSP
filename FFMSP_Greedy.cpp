@@ -9,7 +9,7 @@ using namespace std;
 
 int main(int argc, char *argv[]){
 	string instancia;
-	double threshold, alpha;
+	double threshold;
 	
 	srand(time(NULL));
 

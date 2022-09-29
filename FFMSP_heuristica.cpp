@@ -1,28 +1,29 @@
 #include <vector>
-#include <string.h>
-#include <map>
-#include <cmath>
+#include <string>
+#include <unordered_map>
 #include <algorithm>
 using namespace std;
 
 
-int greedy_random(vector<string> &dataset, double th, int n, int m, double a){
+int greedy_random(vector<string> &dataset, double th, int n, int m, double d){
 	vector<char> bases = {'A', 'C', 'G', 'T'};
 	vector<int> hamming(n);
-	map<char, int> cumpleTH; // contador cantidad strings donde porcentaje hamming >= th
+	unordered_map<char, int> cumpleTH; // contador cantidad strings donde porcentaje hamming >= th
 
-	vector<map<char, int>> contador(m);	// contar cuanto se repiten las bases en cada columna
-	for(int col=0; col<m; col++) 
-		for(int j=0; j<n; j++) 
+	// contar cuanto se repiten las bases en cada columna
+	vector< unordered_map<char, int> > contador(m);	
+	for(int col=0; col<m; col++)
+		for(int j=0; j<n; j++)
 			contador[col][ dataset[j][col] ]++;
 
-	vector<pair<int, int>> indices;
+	vector<pair<int, int>> indices(m);
 	for(int i=0; i<m; i++){
 		int mayor = -1;
 		for(auto par: contador[i]) mayor = max(par.second, mayor);
-		indices.push_back( {mayor, i} );
+		indices[i] = {mayor, i};
 	}
 	sort(indices.begin(), indices.end(), greater<pair<int, int>>());
+
 
 	string sol(m, ' ');
 	int columnasListas = 0;
@@ -30,18 +31,18 @@ int greedy_random(vector<string> &dataset, double th, int n, int m, double a){
 		int col = par.second;
 		columnasListas++;
 		
-		if(rand()%100 < a*100){
-			sol[col] = bases[rand()%4];
-			for(int j=0; j<n; j++) if(dataset[j][col] != sol[col]) hamming[j]++;	
+		if(rand()%100 < (1.f-d)*100){
+			sol[col] = bases[ rand()%4 ];
+			for(int i=0; i<n; i++) if(dataset[i][col] != sol[col]) hamming[i]++;	
 			continue;
 		}
 		
 		for(char base: bases){	 // para cada base a testear
 			cumpleTH[base] = 0;
-			for(int j=0; j<n; j++){	 //para cada base en la columna
-				int hammingAux = hamming[j];
-				if(dataset[j][col] != base) hammingAux += 1;
-				if( hammingAux >= floor(th*columnasListas) ) cumpleTH[base]++;
+			for(int i=0; i<n; i++){	 //para cada base en la columna
+				int dif = 0;
+				if(dataset[i][col] != base) dif = 1;
+				if( hamming[i] + dif >= (int)(th*columnasListas) ) cumpleTH[base]++;
 			}
 		}
 
@@ -63,10 +64,10 @@ int greedy_random(vector<string> &dataset, double th, int n, int m, double a){
 	}
 
 	int calidad = 0;
-	for(int h: hamming) if( h >= floor(th*m) ) calidad++;
+	for(int h: hamming) if( h >= (int)(th*m) ) calidad++;
 	return calidad;
 }
 
 int greedy(vector<string> &dataset, double th, int n, int m){
-	greedy_random(dataset, th, n, m, 0);
+	greedy_random(dataset, th, n, m, 1);
 }
