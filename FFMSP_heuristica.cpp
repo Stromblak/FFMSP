@@ -10,7 +10,6 @@ typedef vector<pair<int, int>> vii;
 typedef vector<string> vs;
 
 tuple<string, int, vector<int>> greedy_random(vs &dataset, vup &contador, vii &indices, double th, double d){
-	cout << 123 << endl;
 	int n = dataset.size();
 	int m = dataset[0].size();
 	vector<char> bases = {'A', 'C', 'G', 'T'};

@@ -12,7 +12,7 @@ int GRASP(vector<string> &dataset, double th, double det, int tMAx);
 
 int main(int argc, char *argv[]){
 	string instancia = "100-300-001.txt";
-	double threshold = 0.75, determinismo = 0.9;
+	double threshold = 0.80, determinismo = 0.9;
 	int tiempoMax = 1;
 	
 	srand(time(NULL));
@@ -38,24 +38,24 @@ int main(int argc, char *argv[]){
 	return 0;
 }
 
-pair<string, int> busquedaLocal(vector<string> dataset, string sol, int cal, int threshold, vector<int> hamming, vector<pair<int, int>> indices){
-	int mejora = 1;
+pair<string, int> busquedaLocal(vector<string> &dataset, vector<pair<int, int>> &indices, vector<int> &hamming, string sol, int cal, int threshold){
+	int mejora = 3;
 	int th = threshold*dataset[0].size();
 	int n = dataset.size();
 	unordered_map<char, int> cumpleTH;
 
 	while(mejora){
-		mejora = 0;
+		mejora--;
 
 		int columnasListas = 0;
 		for(auto par: indices){  // para cada columna	
-
 			int col = par.second;
 			columnasListas++;
 
 			set<char> bases = {'A', 'C', 'G', 'T'};
-			bases.erase(sol[col]);	
-			for(int i=0; i<n; i++) if(dataset[i][col] != sol[col]) hamming[i]--;	
+			//bases.erase(sol[col]);
+
+			for(int i=0; i<n; i++) if(dataset[i][col] != sol[col]) hamming[i]--;
 
 			
 			for(char base: bases){	 // para cada base a testear
@@ -73,23 +73,20 @@ pair<string, int> busquedaLocal(vector<string> dataset, string sol, int cal, int
 			for(auto par: cumpleTH) if(par.second == cumpleThMAx) maximos.push_back(par.first);
 
 			sol[col] = maximos[ rand() % maximos.size() ];
-			for(int i=0; i<n; i++) if(dataset[i][col] != sol[col]) hamming[i]++;	
+			for(int i=0; i<n; i++) if(dataset[i][col] != sol[col]) hamming[i]++;
+
 		}
 
 		int calidadNueva = 0;
 		for(int h: hamming) if( h >= th ) calidadNueva++;
 
 		if(calidadNueva > cal){
-			mejora = 1;
+			mejora = 5;
 			cal = calidadNueva;
 		}
 	}
 
-	cout << 11 << endl;
-
 	return pair<string, int>{sol, cal};
-
-
 }
 
 
@@ -114,27 +111,27 @@ int GRASP(vector<string> &dataset, double th, double det, int tMAx){
 
 	// GRASP
 	string sol;
-	int calidad = -1;
+	int cal = -1;
 
-	while(time(NULL) - ti <= tMAx){
-cout << 333333 << endl;
+	while(time(NULL) - ti <= tMAx && cal != n){
 
 		auto aux = greedy_random(dataset, contador, indices, th, det);
 		string solAux = get<0>(aux);
 		int calAux = get<1>(aux);
 		vector<int> hammingAux = get<2>(aux);
 
-		for(auto a: hammingAux) cout << a << " ";
-		cout << endl;
-
 
 		// Busqueda local
-		auto aux2 = busquedaLocal(dataset, sol, calidad, th, hammingAux, indices);
-		cout << aux2.second << endl;
-		cout << 1111111 << endl;
+		auto aux2 = busquedaLocal(dataset, indices, hammingAux, solAux, calAux, th);
+
+		if(calAux > cal){
+			cal = calAux;
+			sol = solAux;
+			cout << "Nueva solucion: " << cal << endl;
+			cout << "Tiempo: " << time(NULL) - ti << endl;
+		}
 
 	}
 
-cout << 222222 << endl;
-	return calidad;
+	return cal;
 }
