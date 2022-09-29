@@ -5,9 +5,14 @@
 #include <tuple>
 
 using namespace std;
+typedef vector< unordered_map<char, int> > vup;
+typedef vector<pair<int, int>> vii;
+typedef vector<string> vs;
 
-
-auto greedy_random(vector<string> &dataset, auto contador, auto indices, double th, int n, int m, double d){
+tuple<string, int, vector<int>> greedy_random(vs &dataset, vup &contador, vii &indices, double th, double d){
+	cout << 123 << endl;
+	int n = dataset.size();
+	int m = dataset[0].size();
 	vector<char> bases = {'A', 'C', 'G', 'T'};
 	vector<int> hamming(n);
 	unordered_map<char, int> cumpleTH; // contador cantidad strings donde porcentaje hamming >= th
@@ -53,5 +58,5 @@ auto greedy_random(vector<string> &dataset, auto contador, auto indices, double 
 	int calidad = 0;
 	for(int h: hamming) if( h >= (int)(th*m) ) calidad++;
 
-	return tuple<string, int>{sol, calidad};
+	return tuple<string, int, vector<int>> {sol, calidad, hamming};
 }

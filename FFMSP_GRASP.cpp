@@ -3,22 +3,25 @@
 #include <fstream>
 #include <string.h>
 #include <ctime>
+#include <set>
+
 #include "FFMSP_heuristica.cpp"
 using namespace std;
 
-int GRASP(vector<string> &dataset, double th, int n, int m, double det, double tMAx);
+int GRASP(vector<string> &dataset, double th, double det, int tMAx);
 
 int main(int argc, char *argv[]){
-	string instancia;
-	double threshold = 0.75, determinismo = 0.9, tiempoMax = 30;
+	string instancia = "100-300-001.txt";
+	double threshold = 0.75, determinismo = 0.9;
+	int tiempoMax = 1;
 	
 	srand(time(NULL));
 
 	for(int i=0; i<argc; i++){
 		if( !strcmp(argv[i], "-i" ) ) instancia = argv[i+1];
-		if( !strcmp(argv[i], "-t" ) ) tiempoMax = atof(argv[i+1]);
 		if( !strcmp(argv[i], "-th") ) threshold = atof(argv[i+1]);
 		if( !strcmp(argv[i], "-d" ) ) determinismo = atof(argv[i+1]);
+		if( !strcmp(argv[i], "-t" ) ) tiempoMax = atoi(argv[i+1]);
 	}
 
 	ifstream archivo(instancia);
@@ -28,17 +31,72 @@ int main(int argc, char *argv[]){
 	while(archivo >> gen) set.push_back(gen);
 	archivo.close();
 
-	int n = set.size();
-	int m = set[0].size();
 
-	cout << GRASP(set, threshold, n, m, determinismo, tiempoMax) << endl;
+	cout << GRASP(set, threshold, determinismo, tiempoMax) << endl;
 
 
 	return 0;
 }
 
-int GRASP(vector<string> &dataset, double th, int n, int m, double det, double tMAx){
+pair<string, int> busquedaLocal(vector<string> dataset, string sol, int cal, int threshold, vector<int> hamming, vector<pair<int, int>> indices){
+	int mejora = 1;
+	int th = threshold*dataset[0].size();
+	int n = dataset.size();
+	unordered_map<char, int> cumpleTH;
+
+	while(mejora){
+		mejora = 0;
+
+		int columnasListas = 0;
+		for(auto par: indices){  // para cada columna	
+
+			int col = par.second;
+			columnasListas++;
+
+			set<char> bases = {'A', 'C', 'G', 'T'};
+			bases.erase(sol[col]);	
+			for(int i=0; i<n; i++) if(dataset[i][col] != sol[col]) hamming[i]--;	
+
+			
+			for(char base: bases){	 // para cada base a testear
+				cumpleTH[base] = 0;
+				for(int i=0; i<n; i++){	 //para cada base en la columna
+					int dif = 0;
+					if(dataset[i][col] != base) dif = 1;
+					if( hamming[i] + dif >= th ) cumpleTH[base]++;
+				}
+			}
+
+			int cumpleThMAx = -1;
+			vector<char> maximos;
+			for(auto par: cumpleTH) cumpleThMAx = max(cumpleThMAx, par.second);
+			for(auto par: cumpleTH) if(par.second == cumpleThMAx) maximos.push_back(par.first);
+
+			sol[col] = maximos[ rand() % maximos.size() ];
+			for(int i=0; i<n; i++) if(dataset[i][col] != sol[col]) hamming[i]++;	
+		}
+
+		int calidadNueva = 0;
+		for(int h: hamming) if( h >= th ) calidadNueva++;
+
+		if(calidadNueva > cal){
+			mejora = 1;
+			cal = calidadNueva;
+		}
+	}
+
+	cout << 11 << endl;
+
+	return pair<string, int>{sol, cal};
+
+
+}
+
+
+int GRASP(vector<string> &dataset, double th, double det, int tMAx){
 	int ti = time(NULL);
+	int n = dataset.size();
+	int m = dataset[0].size();
 
 	vector< unordered_map<char, int> > contador(m);	
 	for(int col=0; col<m; col++)
@@ -53,16 +111,30 @@ int GRASP(vector<string> &dataset, double th, int n, int m, double det, double t
 	}
 	sort(indices.begin(), indices.end(), greater<pair<int, int>>());
 
-	int calidad;
-	string sol;
-	while(time(NULL) - ti <= tMAx){
-		auto aux = greedy_random(dataset, contador, indices, th, n, m, det);
-		sol = get<0>(aux);
-		calidad = get<1>(aux);
 
-		cout << calidad << endl;
-		
+	// GRASP
+	string sol;
+	int calidad = -1;
+
+	while(time(NULL) - ti <= tMAx){
+cout << 333333 << endl;
+
+		auto aux = greedy_random(dataset, contador, indices, th, det);
+		string solAux = get<0>(aux);
+		int calAux = get<1>(aux);
+		vector<int> hammingAux = get<2>(aux);
+
+		for(auto a: hammingAux) cout << a << " ";
+		cout << endl;
+
+
+		// Busqueda local
+		auto aux2 = busquedaLocal(dataset, sol, calidad, th, hammingAux, indices);
+		cout << aux2.second << endl;
+		cout << 1111111 << endl;
+
 	}
 
+cout << 222222 << endl;
 	return calidad;
 }
