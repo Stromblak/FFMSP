@@ -25,7 +25,7 @@ int main(int argc, char *argv[]){
 		if( !strcmp(argv[i], "-d" ) ) determinismo = atof(argv[i+1]);
 	}
 
-	stats(0.75);
+	stats(0.85);
 	return 0;
 }
 
@@ -36,12 +36,12 @@ void stats(double th){
 	vector<double> CalidadMedia, CalidadDesviacion;
 	vector<double> TiempoMedio, TiempoDesviacion;
 
+	int repeticiones = 5;
 	for(auto in: genomas){
 		cout << in << endl;
 
 		vector<int> calidades;
 		vector<int> tiempos;
-		int repeticiones = 5;
 	
 		for(auto mid: genomas2){
 			ifstream archivo("instancias/" + in + mid + ".txt");
