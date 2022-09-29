@@ -2,28 +2,15 @@
 #include <string>
 #include <unordered_map>
 #include <algorithm>
+#include <tuple>
+
 using namespace std;
 
 
-int greedy_random(vector<string> &dataset, double th, int n, int m, double d){
+auto greedy_random(vector<string> &dataset, auto contador, auto indices, double th, int n, int m, double d){
 	vector<char> bases = {'A', 'C', 'G', 'T'};
 	vector<int> hamming(n);
 	unordered_map<char, int> cumpleTH; // contador cantidad strings donde porcentaje hamming >= th
-
-	// contar cuanto se repiten las bases en cada columna
-	vector< unordered_map<char, int> > contador(m);	
-	for(int col=0; col<m; col++)
-		for(int j=0; j<n; j++)
-			contador[col][ dataset[j][col] ]++;
-
-	vector<pair<int, int>> indices(m);
-	for(int i=0; i<m; i++){
-		int mayor = -1;
-		for(auto par: contador[i]) mayor = max(par.second, mayor);
-		indices[i] = {mayor, i};
-	}
-	sort(indices.begin(), indices.end(), greater<pair<int, int>>());
-
 
 	string sol(m, ' ');
 	int columnasListas = 0;
@@ -65,9 +52,6 @@ int greedy_random(vector<string> &dataset, double th, int n, int m, double d){
 
 	int calidad = 0;
 	for(int h: hamming) if( h >= (int)(th*m) ) calidad++;
-	return calidad;
-}
 
-int greedy(vector<string> &dataset, double th, int n, int m){
-	greedy_random(dataset, th, n, m, 1);
+	return tuple<string, int>{sol, calidad};
 }
