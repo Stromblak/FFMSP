@@ -40,9 +40,9 @@ int greedy_random(vector<string> &dataset, double th, int n, int m, double d){
 		for(char base: bases){	 // para cada base a testear
 			cumpleTH[base] = 0;
 			for(int i=0; i<n; i++){	 //para cada base en la columna
-				int dif = 0, thcolumnas = th*columnasListas;
+				int dif = 0;
 				if(dataset[i][col] != base) dif = 1;
-				if( hamming[i] + dif >= thcolumnas ) cumpleTH[base]++;
+				if( hamming[i] + dif >= (int)(th*columnasListas) ) cumpleTH[base]++;
 			}
 		}
 
@@ -63,8 +63,8 @@ int greedy_random(vector<string> &dataset, double th, int n, int m, double d){
 		for(int j=0; j<n; j++) if(dataset[j][col] != sol[col]) hamming[j]++;	
 	}
 
-	int calidad = 0, thm = th*m;
-	for(int h: hamming) if(h >= thm) calidad++;
+	int calidad = 0;
+	for(int h: hamming) if( h >= (int)(th*m) ) calidad++;
 	return calidad;
 }
 
