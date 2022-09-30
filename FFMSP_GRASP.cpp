@@ -5,6 +5,7 @@
 #include <ctime>
 #include <unordered_map>
 #include <algorithm>
+#include <random>
 
 using namespace std;
 
@@ -18,6 +19,7 @@ class GRASP{
 		unordered_map<char, int> cumpleTH; // contador cantidad strings donde porcentaje hamming >= th
 		double th, det;
 		int n, m, tMAx;
+		//minstd_rand rng(time(NULL));
 
 		void procesarIndices(){
 			contador = vector<unordered_map<char, int>>(m);
@@ -83,22 +85,27 @@ class GRASP{
 		}
 
 		pair<string, int> busquedaLocal(pair<string, int> solucion){
-			int intentosMax = 10;
+			int intentosMax = 25;
 			int intentos = intentosMax;
 			int th_m = th*m;
 
 			string sol = solucion.first;
 			int cal = solucion.second;
 
+			vector<int> indicesRandom;
+
 			while(intentos){
+				indicesRandom = indices;
+				if(rand()%10 == 0) random_shuffle(indicesRandom.begin(), indicesRandom.end());
 				intentos -= 1;
 
 				int columnasListas = 0;
-				for(int col: indices){  // para cada columna
+				for(int col: indicesRandom){  // para cada columna
 					for(int i=0; i<n; i++) if(dataset[i][col] != sol[col]) hamming[i]--;
 
 					for(char base: bases){	 // para cada base a testear
 						cumpleTH[base] = 0;
+						if(base == sol[col] && rand()%600 == 0) continue;
 						for(int i=0; i<n; i++){	 //para cada base en la columna
 							int dif = 0;
 							if(dataset[i][col] != base) dif = 1;
@@ -160,8 +167,8 @@ class GRASP{
 
 int main(int argc, char *argv[]){
 	string instancia = "100-300-001.txt";
-	double threshold = 0.80, determinismo = 0.9;
-	int tiempoMaximo = 10;
+	double threshold = 0.80, determinismo = 0.8;
+	int tiempoMaximo = 30;
 	
 	srand(time(NULL));
 
