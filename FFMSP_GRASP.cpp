@@ -42,8 +42,8 @@ class GRASP{
 		pair<string, int> greedyRandomizado(){
 			hamming = vector<int>(n);
 			string sol(m, ' ');
-			int columnasListas = 0;
 			
+			int columnasListas = 0;
 			for(int col: indices){  // para cada columna
 				columnasListas++;
 				
@@ -61,21 +61,7 @@ class GRASP{
 						if( hamming[i] + dif >= (int)(th*columnasListas) ) cumpleTH[base]++;
 					}
 				}
-
-				// encontrar a los maximos de cumpleTH
-				int cumpleThMAx = -1;
-				vector<char> maximos;
-				for(auto par: cumpleTH) cumpleThMAx = max(cumpleThMAx, par.second);
-				for(auto par: cumpleTH) if(par.second == cumpleThMAx) maximos.push_back(par.first);
-
-				// elegir los minimos de cuanto se repiten los maximos en la columna
-				int repMin = n+1;
-				vector<char> minRepeticion;
-				for(char c: maximos) repMin = min(repMin, contador[col][c]);
-				for(char c: maximos) if(contador[col][c] == repMin) minRepeticion.push_back(c);
-				
-				// elegir al azar entre los minimos y actualizar dist hamming
-				sol[col] = minRepeticion[ rand() % minRepeticion.size() ];
+				sol[col] = encontrarMejorBase(col);
 				for(int j=0; j<n; j++) if(dataset[j][col] != sol[col]) hamming[j]++;	
 			}
 
@@ -85,8 +71,13 @@ class GRASP{
 			return pair<string, int>{sol, calidad};
 		}
 
-		pair<string, int> busquedaLocal(string sol, int cal){
-			int intentosMax = 3, intentos = intentosMax, th_m = th*m;
+		pair<string, int> busquedaLocal(pair<string, int> solucion){
+			int intentosMax = 3;
+			int intentos = intentosMax;
+			int th_m = th*m;
+
+			string sol = solucion.first;
+			int cal = solucion.second;
 
 			while(intentos){
 				intentos -= 1;
@@ -104,16 +95,11 @@ class GRASP{
 						for(int i=0; i<n; i++){	 //para cada base en la columna
 							int dif = 0;
 							if(dataset[i][col] != base) dif = 1;
-							if( hamming[i] + dif >= th_m ) cumpleTH[base]++;
+							if(hamming[i] + dif >= th_m) cumpleTH[base]++;
 						}
 					}
 
-					int cumpleThMAx = -1;
-					vector<char> maximos;
-					for(auto par: cumpleTH) cumpleThMAx = max(cumpleThMAx, par.second);
-					for(auto par: cumpleTH) if(par.second == cumpleThMAx) maximos.push_back(par.first);
-
-					sol[col] = maximos[ rand() % maximos.size() ];
+					sol[col] = encontrarMejorBase(col);
 					for(int i=0; i<n; i++) if(dataset[i][col] != sol[col]) hamming[i]++;
 				}
 
@@ -129,6 +115,21 @@ class GRASP{
 			return pair<string, int>{sol, cal};
 		}
 
+		char encontrarMejorBase(int col){
+			// encontrar a los maximos de cumpleTH
+			int cumpleThMAx = -1;
+			vector<char> maximos;
+			for(auto par: cumpleTH) cumpleThMAx = max(cumpleThMAx, par.second);
+			for(auto par: cumpleTH) if(par.second == cumpleThMAx) maximos.push_back(par.first);
+
+			// elegir los minimos de cuanto se repiten los maximos en la columna
+			int repMin = n+1;
+			vector<char> minRepeticion;
+			for(char c: maximos) repMin = min(repMin, contador[col][c]);
+			for(char c: maximos) if(contador[col][c] == repMin) minRepeticion.push_back(c);
+			
+			return minRepeticion[ rand() % minRepeticion.size() ];
+		}
 
 	public:
 		GRASP(string instancia, double threshold, double determinismo, int tiempoMaximo){	
@@ -143,36 +144,30 @@ class GRASP{
 			th = threshold;
 			det = determinismo;
 			tMAx = tiempoMaximo;
-
-			procesarIndices();
 		}
 
 		int iniciar(){
-			int calidadActual = -1, ti = time(NULL);
-			string solucionActual;
+			int ti = time(NULL);
+			pair<string, int> solActual = {" ", -1};
+			procesarIndices();
 
-			while(time(NULL) - ti <= tMAx && calidadActual != n){
-				pair<string, int> aux = greedyRandomizado();
-				string solucionNueva = aux.first;
-				int calidadNueva = aux.second;
+			while(time(NULL) - ti <= tMAx && solActual.second != n){
+				pair<string, int> solNueva = busquedaLocal( greedyRandomizado() );
 
-				aux = busquedaLocal(solucionNueva, calidadNueva);
-
-				if(calidadNueva > calidadActual){
-					calidadActual = calidadNueva;
-					solucionActual = solucionNueva;
-					cout << "Nueva solucion: " << calidadActual << "  Tiempo: " << time(NULL) - ti << endl;
+				if(solNueva.second > solActual.second){
+					solActual = solNueva;
+					cout << "Nueva solucion: " << solNueva.second << "  Tiempo: " << time(NULL) - ti << endl;
 				}
 			}
 
-			return calidadActual;
+			return solActual.second;
 		}
 };
 
 
 int main(int argc, char *argv[]){
 	string instancia = "100-300-001.txt";
-	double threshold = 0.80, determinismo = 0.99;
+	double threshold = 0.80, determinismo = 0.98;
 	int tiempoMaximo = 10;
 	
 	srand(time(NULL));
