@@ -41,76 +41,29 @@ class GRASP{
 			hamming = vector<int>(n);
 			string sol(m, ' ');
 			
-			int columnasListas = 0;
-			for(int col: indices){  // para cada columna
-				columnasListas++;
-				
-				if(rand()%100 < (1.f-det)*100){
-					sol[col] = bases[ rand()%4 ];
-					for(int i=0; i<n; i++) if(dataset[i][col] != sol[col]) hamming[i]++;	
-					continue;
-				}
-				
-				for(char base: bases){	 // para cada base a testear
-					cumpleTH[base] = 0;
-					for(int i=0; i<n; i++){	 //para cada base en la columna
-						int dif = 0;
-						if(dataset[i][col] != base) dif = 1;
-						if( hamming[i] + dif >= (int)(th*columnasListas) ) cumpleTH[base]++;
+			int columnasListas = 1;
+			for(int col: indices){  // para cada columna			
+				if(rand()%100 < (1.f-det)*100) sol[col] = bases[ rand()%4 ];
+				else{
+					for(char base: bases){	 // para cada base a testear
+						cumpleTH[base] = 0;
+						for(int i=0; i<n; i++){	 //para cada base en la columna
+							int dif = 0;
+							if(dataset[i][col] != base) dif = 1;
+							if( hamming[i] + dif >= (int)(th*columnasListas) ) cumpleTH[base]++;
+						}
 					}
+					sol[col] = encontrarMejorBase(col);
 				}
-				sol[col] = encontrarMejorBase(col);
-				for(int j=0; j<n; j++) if(dataset[j][col] != sol[col]) hamming[j]++;	
+				
+				for(int i=0; i<n; i++) if(dataset[i][col] != sol[col]) hamming[i]++;	
+				columnasListas++;
 			}
 
 			int calidad = 0;
 			for(int h: hamming) if( h >= (int)(th*m) ) calidad++;
 
 			return pair<string, int>{sol, calidad};
-		}
-
-		pair<string, int> busquedaLocal(pair<string, int> solucion){
-			int intentosMax = 3;
-			int intentos = intentosMax;
-			int th_m = th*m;
-
-			string sol = solucion.first;
-			int cal = solucion.second;
-
-			while(intentos){
-				intentos -= 1;
-
-				int columnasListas = 0;
-				for(int col: indices){  // para cada columna
-					columnasListas++;
-
-					for(int i=0; i<n; i++) if(dataset[i][col] != sol[col]) hamming[i]--;
-
-					for(char base: bases){	 // para cada base a testear
-						if(base == sol[col] && rand()%3) continue;
-
-						cumpleTH[base] = 0;
-						for(int i=0; i<n; i++){	 //para cada base en la columna
-							int dif = 0;
-							if(dataset[i][col] != base) dif = 1;
-							if(hamming[i] + dif >= th_m) cumpleTH[base]++;
-						}
-					}
-
-					sol[col] = encontrarMejorBase(col);
-					for(int i=0; i<n; i++) if(dataset[i][col] != sol[col]) hamming[i]++;
-				}
-
-				int calidadNueva = 0;
-				for(int h: hamming) if( h >= th_m ) calidadNueva++;
-
-				if(calidadNueva > cal){
-					intentos = intentosMax;
-					cal = calidadNueva;
-				}
-			}
-
-			return pair<string, int>{sol, cal};
 		}
 
 		char encontrarMejorBase(int col){
@@ -128,6 +81,48 @@ class GRASP{
 			
 			return minRepeticion[ rand() % minRepeticion.size() ];
 		}
+
+		pair<string, int> busquedaLocal(pair<string, int> solucion){
+			int intentosMax = 10;
+			int intentos = intentosMax;
+			int th_m = th*m;
+
+			string sol = solucion.first;
+			int cal = solucion.second;
+
+			while(intentos){
+				intentos -= 1;
+
+				int columnasListas = 0;
+				for(int col: indices){  // para cada columna
+					for(int i=0; i<n; i++) if(dataset[i][col] != sol[col]) hamming[i]--;
+
+					for(char base: bases){	 // para cada base a testear
+						cumpleTH[base] = 0;
+						for(int i=0; i<n; i++){	 //para cada base en la columna
+							int dif = 0;
+							if(dataset[i][col] != base) dif = 1;
+							if(hamming[i] + dif >= th_m) cumpleTH[base]++;
+						}
+					}
+
+					sol[col] = encontrarMejorBase(col);
+					for(int i=0; i<n; i++) if(dataset[i][col] != sol[col]) hamming[i]++;
+					columnasListas++;
+				}
+
+				int calidadNueva = 0;
+				for(int h: hamming) if(h >= th_m) calidadNueva += 1;
+
+				if(calidadNueva > cal){
+					intentos = intentosMax;
+					cal = calidadNueva;
+				}
+			}
+
+			return pair<string, int>{sol, cal};
+		}
+
 
 	public:
 		GRASP(string instancia, double threshold, double determinismo, int tiempoMaximo){	
@@ -165,7 +160,7 @@ class GRASP{
 
 int main(int argc, char *argv[]){
 	string instancia = "100-300-001.txt";
-	double threshold = 0.80, determinismo = 0.98;
+	double threshold = 0.80, determinismo = 0.9;
 	int tiempoMaximo = 10;
 	
 	srand(time(NULL));
