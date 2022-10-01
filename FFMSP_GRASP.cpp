@@ -7,19 +7,23 @@
 #include <algorithm>
 #include <random>
 
+#include <thread>
+#include <atomic>
+
 using namespace std;
 
 
+atomic_int suma = 0;
 class GRASP{
 	private:
 		vector<char> bases = {'A', 'C', 'G', 'T'};
 		vector<string> dataset;
 		vector<int> hamming, indices;
 		vector<unordered_map<char, int>> contador;
-		unordered_map<char, int> cumpleTH; // contador cantidad strings donde porcentaje hamming >= th
+		unordered_map<char, int> cumpleTH;
 		double th, det;
-		int n, m, tMAx;
-		//minstd_rand rng(time(NULL));
+		int n, m, tMAx, intentosExtra;
+		minstd_rand rng;
 
 		void procesarIndices(){
 			contador = vector<unordered_map<char, int>>(m);
@@ -45,8 +49,7 @@ class GRASP{
 			
 			int columnasListas = 1;
 			for(int col: indices){  // para cada columna			
-				if(rand()%100 < (1.f-det)*100) sol[col] = bases[ rand()%4 ];
-				else{
+				if(rng()%100 < det*100){
 					for(char base: bases){	 // para cada base a testear
 						cumpleTH[base] = 0;
 						for(int i=0; i<n; i++){	 //para cada base en la columna
@@ -56,7 +59,9 @@ class GRASP{
 						}
 					}
 					sol[col] = encontrarMejorBase(col);
+					
 				}
+				else sol[col] = bases[ rng()%4 ];
 				
 				for(int i=0; i<n; i++) if(dataset[i][col] != sol[col]) hamming[i]++;	
 				columnasListas++;
@@ -81,31 +86,25 @@ class GRASP{
 			for(char c: maximos) repMin = min(repMin, contador[col][c]);
 			for(char c: maximos) if(contador[col][c] == repMin) minRepeticion.push_back(c);
 			
-			return minRepeticion[ rand() % minRepeticion.size() ];
+			return minRepeticion[ rng() % minRepeticion.size() ];
 		}
 
 		pair<string, int> busquedaLocal(pair<string, int> solucion){
-			int intentosMax = 25;
-			int intentos = intentosMax;
-			int th_m = th*m;
+			int intentos = 5, th_m = th*m;
 
 			string sol = solucion.first;
 			int cal = solucion.second;
 
-			vector<int> indicesRandom;
-
 			while(intentos){
-				indicesRandom = indices;
-				if(rand()%10 == 0) random_shuffle(indicesRandom.begin(), indicesRandom.end());
 				intentos -= 1;
 
 				int columnasListas = 0;
-				for(int col: indicesRandom){  // para cada columna
+				for(int col: indices){  // para cada columna
 					for(int i=0; i<n; i++) if(dataset[i][col] != sol[col]) hamming[i]--;
 
 					for(char base: bases){	 // para cada base a testear
 						cumpleTH[base] = 0;
-						if(base == sol[col] && rand()%600 == 0) continue;
+						if(base == sol[col] && rng()%600 == 0) continue;
 						for(int i=0; i<n; i++){	 //para cada base en la columna
 							int dif = 0;
 							if(dataset[i][col] != base) dif = 1;
@@ -122,7 +121,7 @@ class GRASP{
 				for(int h: hamming) if(h >= th_m) calidadNueva += 1;
 
 				if(calidadNueva > cal){
-					intentos = intentosMax;
+					intentos += intentosExtra;
 					cal = calidadNueva;
 				}
 			}
@@ -130,9 +129,8 @@ class GRASP{
 			return pair<string, int>{sol, cal};
 		}
 
-
 	public:
-		GRASP(string instancia, double threshold, double determinismo, int tiempoMaximo){	
+		GRASP(string instancia, double threshold, double determinismo, int tiempoMaximo, int intentos){	
 			ifstream archivo(instancia);
 			string gen;
  
@@ -144,6 +142,8 @@ class GRASP{
 			th = threshold;
 			det = determinismo;
 			tMAx = tiempoMaximo;
+			intentosExtra = intentos;
+			rng.seed(rand());
 		}
 
 		int iniciar(){
@@ -160,6 +160,7 @@ class GRASP{
 				}
 			}
 
+			suma += solActual.second;
 			return solActual.second;
 		}
 };
@@ -168,19 +169,31 @@ class GRASP{
 int main(int argc, char *argv[]){
 	string instancia = "100-300-001.txt";
 	double threshold = 0.80, determinismo = 0.8;
-	int tiempoMaximo = 30;
+	int tiempoMaximo = 30, intentosExtra = 20;
 	
-	srand(time(NULL));
-
 	for(int i=0; i<argc; i++){
 		if( !strcmp(argv[i], "-i" ) ) instancia = argv[i+1];
 		if( !strcmp(argv[i], "-th") ) threshold = atof(argv[i+1]);
 		if( !strcmp(argv[i], "-d" ) ) determinismo = atof(argv[i+1]);
 		if( !strcmp(argv[i], "-t" ) ) tiempoMaximo = atoi(argv[i+1]);
+		if( !strcmp(argv[i], "-e" ) ) intentosExtra = atoi(argv[i+1]);
 	}
 
-	GRASP grasp = GRASP(instancia, threshold, determinismo, tiempoMaximo);
-	cout << grasp.iniciar() << endl;
+	srand(time(NULL));
+
+	vector<GRASP> g;
+	vector<thread> t;
+	int hilos = 10;
+
+	for(int i=0; i<hilos; i++){
+		g.push_back( GRASP(instancia, threshold, determinismo, tiempoMaximo, intentosExtra) );
+		thread aux(&GRASP::iniciar, g[i]);
+		t.push_back( move(aux) );
+	}
+
+	for(int i=0; i<hilos; i++) t[i].join();
+
+	cout << (double)(suma)/hilos << endl;
 
 	return 0;
 }
