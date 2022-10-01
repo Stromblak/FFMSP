@@ -13,7 +13,6 @@
 using namespace std;
 
 
-atomic_int suma = 0;
 class GRASP{
 	private:
 		vector<char> bases = {'A', 'C', 'G', 'T'};
@@ -60,8 +59,7 @@ class GRASP{
 					}
 					sol[col] = encontrarMejorBase(col);
 					
-				}
-				else sol[col] = bases[ rng()%4 ];
+				}else sol[col] = bases[ rng()%4 ];
 				
 				for(int i=0; i<n; i++) if(dataset[i][col] != sol[col]) hamming[i]++;	
 				columnasListas++;
@@ -96,9 +94,8 @@ class GRASP{
 			int cal = solucion.second;
 
 			while(intentos){
-				intentos -= 1;
-
 				int columnasListas = 0;
+
 				for(int col: indices){  // para cada columna
 					for(int i=0; i<n; i++) if(dataset[i][col] != sol[col]) hamming[i]--;
 
@@ -123,7 +120,7 @@ class GRASP{
 				if(calidadNueva > cal){
 					intentos += intentosExtra;
 					cal = calidadNueva;
-				}
+				}else intentos -= 1;
 			}
 
 			return pair<string, int>{sol, cal};
@@ -160,11 +157,15 @@ class GRASP{
 				}
 			}
 
-			suma += solActual.second;
 			return solActual.second;
 		}
 };
 
+atomic_int suma = 0;
+void funcionHilos(string instancia, double threshold, double determinismo, int tiempoMaximo, int intentos){
+	GRASP g(instancia, threshold, determinismo, tiempoMaximo, intentos);
+	suma += g.iniciar();
+}
 
 int main(int argc, char *argv[]){
 	string instancia = "100-300-001.txt";
@@ -181,13 +182,14 @@ int main(int argc, char *argv[]){
 
 	srand(time(NULL));
 
-	vector<GRASP> g;
+
+	vector<string> num = {"001", "002", "003", "004", "005", "006", "007", "008", "009", "010"};
 	vector<thread> t;
 	int hilos = 10;
 
 	for(int i=0; i<hilos; i++){
-		g.push_back( GRASP(instancia, threshold, determinismo, tiempoMaximo, intentosExtra) );
-		thread aux(&GRASP::iniciar, g[i]);
+		instancia = "instancias/100-800-" + num[i] + ".txt";
+		thread aux(funcionHilos, instancia, threshold, determinismo, tiempoMaximo, intentosExtra);
 		t.push_back( move(aux) );
 	}
 
