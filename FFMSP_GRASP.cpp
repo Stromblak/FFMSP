@@ -9,6 +9,7 @@
 
 #include <thread>
 #include <atomic>
+#include <map>
 
 using namespace std;
 
@@ -19,10 +20,11 @@ class GRASP{
 		vector<string> dataset;
 		vector<int> hamming, indices;
 		vector<unordered_map<char, int>> contador;
-		unordered_map<char, int> cumpleTH;
+		unordered_map<char, int> calidadBase;
 		double th, det;
-		int n, m, tMAx, intentosExtra;
+		int n, m, tMAx;
 		minstd_rand rng;
+
 
 		void procesarIndices(){
 			contador = vector<unordered_map<char, int>>(m);
@@ -41,6 +43,24 @@ class GRASP{
 			indices = vector<int>(m);
 			for(int i=0; i<m; i++) indices[i] = indicesAux[i].second;
 		}
+		
+		char encontrarMejorBase(int col){
+			// encontrar a los maximos de cumpleTH
+			int calidadBaseMax = -1;
+			vector<char> maximos;
+			for(auto par: calidadBase) calidadBaseMax = max(calidadBaseMax, par.second);
+			for(auto par: calidadBase) if(par.second == calidadBaseMax) maximos.push_back(par.first);
+
+			if(rng()%3) return maximos[ rng() % maximos.size() ];
+
+			// elegir los minimos de cuanto se repiten los maximos en la columna
+			int repMin = n+1;
+			vector<char> minRepeticion;
+			for(char c: maximos) repMin = min(repMin, contador[col][c]);
+			for(char c: maximos) if(contador[col][c] == repMin) minRepeticion.push_back(c);
+
+			return minRepeticion[ rng() % minRepeticion.size() ];
+		}
 
 		pair<string, int> greedyRandomizado(){
 			hamming = vector<int>(n);
@@ -50,84 +70,64 @@ class GRASP{
 			for(int col: indices){  // para cada columna			
 				if(rng()%100 < det*100){
 					for(char base: bases){	 // para cada base a testear
-						cumpleTH[base] = 0;
+						calidadBase[base] = 0;
 						for(int i=0; i<n; i++){	 //para cada base en la columna
 							int dif = 0;
 							if(dataset[i][col] != base) dif = 1;
-							if( hamming[i] + dif >= (int)(th*columnasListas) ) cumpleTH[base]++;
+							if( hamming[i] + dif >= (int)(th*columnasListas) ) calidadBase[base]++;
 						}
 					}
 					sol[col] = encontrarMejorBase(col);
 					
 				}else sol[col] = bases[ rng()%4 ];
 				
-				for(int i=0; i<n; i++) if(dataset[i][col] != sol[col]) hamming[i]++;	
+				for(int i=0; i<n; i++) if(dataset[i][col] != sol[col]) hamming[i]++;
 				columnasListas++;
 			}
 
-			int calidad = 0;
-			for(int h: hamming) if( h >= (int)(th*m) ) calidad++;
-
+			int calidad = calidadBase[ sol[indices.back()] ];	
 			return pair<string, int>{sol, calidad};
 		}
 
-		char encontrarMejorBase(int col){
-			// encontrar a los maximos de cumpleTH
-			int cumpleThMAx = -1;
-			vector<char> maximos;
-			for(auto par: cumpleTH) cumpleThMAx = max(cumpleThMAx, par.second);
-			for(auto par: cumpleTH) if(par.second == cumpleThMAx) maximos.push_back(par.first);
-
-			// elegir los minimos de cuanto se repiten los maximos en la columna
-			int repMin = n+1;
-			vector<char> minRepeticion;
-			for(char c: maximos) repMin = min(repMin, contador[col][c]);
-			for(char c: maximos) if(contador[col][c] == repMin) minRepeticion.push_back(c);
-			
-			return minRepeticion[ rng() % minRepeticion.size() ];
-		}
-
 		pair<string, int> busquedaLocal(pair<string, int> solucion){
-			int intentos = 5, th_m = th*m;
-
 			string sol = solucion.first;
 			int cal = solucion.second;
+			int intentos = 5;
+
+			vector<int>	indices2 = indices;
 
 			while(intentos){
-				int columnasListas = 0;
+				int calOriginal = cal;
 
-				for(int col: indices){  // para cada columna
+				for(int col: indices2){  // para cada columna 0/m-1
 					for(int i=0; i<n; i++) if(dataset[i][col] != sol[col]) hamming[i]--;
 
 					for(char base: bases){	 // para cada base a testear
-						cumpleTH[base] = 0;
-						if(base == sol[col] && rng()%600 == 0) continue;
+						calidadBase[base] = 0;
+						if(rng()%m == 0) continue;
+						
 						for(int i=0; i<n; i++){	 //para cada base en la columna
 							int dif = 0;
-							if(dataset[i][col] != base) dif = 1;
-							if(hamming[i] + dif >= th_m) cumpleTH[base]++;
+							if(base != dataset[i][col]) dif = 1;
+							if(hamming[i] + dif >= (int)(th*m)) calidadBase[base]++;
 						}
 					}
-
 					sol[col] = encontrarMejorBase(col);
+					
 					for(int i=0; i<n; i++) if(dataset[i][col] != sol[col]) hamming[i]++;
-					columnasListas++;
 				}
-
-				int calidadNueva = 0;
-				for(int h: hamming) if(h >= th_m) calidadNueva += 1;
-
-				if(calidadNueva > cal){
-					intentos += intentosExtra;
-					cal = calidadNueva;
-				}else intentos -= 1;
+				
+				cal = calidadBase[ sol[indices2.back()] ];						
+				if(cal > calOriginal) intentos = min(20, intentos + 1);
+				else intentos -= 1;
 			}
 
 			return pair<string, int>{sol, cal};
 		}
 
+
 	public:
-		GRASP(string instancia, double threshold, double determinismo, int tiempoMaximo, int intentos){	
+		GRASP(string instancia, double threshold, double determinismo, int tiempoMaximo){	
 			ifstream archivo(instancia);
 			string gen;
  
@@ -139,8 +139,7 @@ class GRASP{
 			th = threshold;
 			det = determinismo;
 			tMAx = tiempoMaximo;
-			intentosExtra = intentos;
-			rng.seed(rand());
+			rng.seed(time(NULL));
 		}
 
 		int iniciar(){
@@ -161,23 +160,35 @@ class GRASP{
 		}
 };
 
+
 atomic_int suma = 0;
-void funcionHilos(string instancia, double threshold, double determinismo, int tiempoMaximo, int intentos){
-	GRASP g(instancia, threshold, determinismo, tiempoMaximo, intentos);
+void funcionHilos(string instancia, double threshold, double determinismo, int tiempoMaximo){
+	GRASP g(instancia, threshold, determinismo, tiempoMaximo);
 	suma += g.iniciar();
+}
+
+map<string, int> mp80, mp85;
+void funcionHilos2(string instancia, double threshold, double determinismo, int tiempoMaximo){
+	string inst = "instancias/" + instancia + "-001.txt";
+
+	GRASP g(inst, threshold, determinismo, tiempoMaximo);
+	string aux = to_string(threshold);
+	aux.resize(4);
+
+	if(threshold == 0.80) mp80[instancia + "    " + aux] = g.iniciar();
+	if(threshold == 0.85) mp85[instancia + "    " + aux] = g.iniciar();
 }
 
 int main(int argc, char *argv[]){
 	string instancia = "100-300-001.txt";
-	double threshold = 0.80, determinismo = 0.8;
-	int tiempoMaximo = 30, intentosExtra = 20;
+	double threshold = 0.80, determinismo = 0.9;
+	int tiempoMaximo = 30;
 	
 	for(int i=0; i<argc; i++){
 		if( !strcmp(argv[i], "-i" ) ) instancia = argv[i+1];
 		if( !strcmp(argv[i], "-th") ) threshold = atof(argv[i+1]);
 		if( !strcmp(argv[i], "-d" ) ) determinismo = atof(argv[i+1]);
 		if( !strcmp(argv[i], "-t" ) ) tiempoMaximo = atoi(argv[i+1]);
-		if( !strcmp(argv[i], "-e" ) ) intentosExtra = atoi(argv[i+1]);
 	}
 
 	srand(time(NULL));
@@ -185,17 +196,47 @@ int main(int argc, char *argv[]){
 
 	vector<string> num = {"001", "002", "003", "004", "005", "006", "007", "008", "009", "010"};
 	vector<thread> t;
-	int hilos = 10;
 
+	/*
+	int hilos = 10;
 	for(int i=0; i<hilos; i++){
-		instancia = "instancias/100-800-" + num[i] + ".txt";
+		instancia = "instancias/200-300-" + num[i] + ".txt";
 		thread aux(funcionHilos, instancia, threshold, determinismo, tiempoMaximo, intentosExtra);
 		t.push_back( move(aux) );
 	}
-
-	for(int i=0; i<hilos; i++) t[i].join();
-
+	for(int i=0; i<t.size(); i++) t[i].join();
 	cout << (double)(suma)/hilos << endl;
+	*/
+
+	thread aux1(funcionHilos2, "200-300", 0.80, determinismo, tiempoMaximo);
+	thread aux2(funcionHilos2, "200-300", 0.85, determinismo, tiempoMaximo);
+	thread aux3(funcionHilos2, "200-600", 0.80, determinismo, tiempoMaximo);
+	thread aux4(funcionHilos2, "200-600", 0.85, determinismo, tiempoMaximo);
+	thread aux5(funcionHilos2, "200-800", 0.80, determinismo, tiempoMaximo);
+	thread aux6(funcionHilos2, "200-800", 0.85, determinismo, tiempoMaximo);
+	t.push_back( move(aux1) );
+	t.push_back( move(aux2) );
+	t.push_back( move(aux3) );
+	t.push_back( move(aux4) );
+	t.push_back( move(aux5) );
+	t.push_back( move(aux6) );
+	for(int i=0; i<t.size(); i++) t[i].join();
+
+	cout << endl;
+	for(auto a: mp80) cout << a.first << "    " << a.second << endl;
+	for(auto a: mp85) cout << a.first << "    " << a.second << endl;
+
 
 	return 0;
 }
+
+
+/*
+
+200-300    0.80    82
+200-600    0.80    70
+200-800    0.80    61
+200-300    0.85    12
+200-600    0.85    7
+200-800    0.85    5
+*/
