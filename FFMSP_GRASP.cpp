@@ -51,8 +51,6 @@ class GRASP{
 			for(auto par: calidadBase) calidadBaseMax = max(calidadBaseMax, par.second);
 			for(auto par: calidadBase) if(par.second == calidadBaseMax) maximos.push_back(par.first);
 
-			if(rng()%3) return maximos[ rng() % maximos.size() ];
-
 			// elegir los minimos de cuanto se repiten los maximos en la columna
 			int repMin = n+1;
 			vector<char> minRepeticion;
@@ -94,12 +92,10 @@ class GRASP{
 			int cal = solucion.second;
 			int intentos = 5;
 
-			vector<int>	indices2 = indices;
-
 			while(intentos){
 				int calOriginal = cal;
 
-				for(int col: indices2){  // para cada columna 0/m-1
+				for(int col: indices){  // para cada columna 0/m-1
 					for(int i=0; i<n; i++) if(dataset[i][col] != sol[col]) hamming[i]--;
 
 					for(char base: bases){	 // para cada base a testear
@@ -117,7 +113,7 @@ class GRASP{
 					for(int i=0; i<n; i++) if(dataset[i][col] != sol[col]) hamming[i]++;
 				}
 				
-				cal = calidadBase[ sol[indices2.back()] ];						
+				cal = calidadBase[ sol[indices.back()] ];						
 				if(cal > calOriginal) intentos = min(20, intentos + 1);
 				else intentos -= 1;
 			}
