@@ -17,7 +17,7 @@ class GRASP{
 		vector<unordered_map<char, int>> contador;
 		unordered_map<char, int> calidadBase;
 		double th, det;
-		int n, m, tMAx;
+		int n, m, ti, tMAx, intentosExtra;
 		minstd_rand rng;
 
 
@@ -83,19 +83,18 @@ class GRASP{
 		}
 
 		pair<string, int> busquedaLocal(pair<string, int> solucion){
-			string sol = solucion.first;
-			int cal = solucion.second;
+			string mejorSol = solucion.first, sol = mejorSol;
+			int mejorCal = solucion.second;
 			int intentos = 5;
 
-			while(intentos){
-				int calOriginal = cal;
+			while(intentos && time(NULL) - ti <= tMAx){
 
 				for(int col: indices){  // para cada columna
 					for(int i=0; i<n; i++) if(dataset[i][col] != sol[col]) hamming[i]--;
 
 					for(char base: bases){	 // para cada base a testear
 						calidadBase[base] = 0;
-						if(rng()%m == 0) continue;
+						if(base == sol[col] && rng()%m == 0) continue;
 						
 						for(int i=0; i<n; i++){	 //para cada base en la columna
 							int dif = 0;
@@ -107,18 +106,20 @@ class GRASP{
 					
 					for(int i=0; i<n; i++) if(dataset[i][col] != sol[col]) hamming[i]++;
 				}
-				
-				cal = calidadBase[ sol[indices.back()] ];						
-				if(cal > calOriginal) intentos = min(20, intentos + 1);
-				else intentos -= 1;
+									
+				if(calidadBase[ sol[indices.back()] ] > mejorCal){
+					mejorSol = sol;
+					mejorCal = calidadBase[ sol[indices.back()] ];
+					intentos += intentosExtra;
+				}else intentos -= 1;
 			}
 
-			return pair<string, int>{sol, cal};
+			return pair<string, int>{mejorSol, mejorCal};
 		}
 
 
 	public:
-		GRASP(string instancia, double threshold, double determinismo, int tiempoMaximo){	
+		GRASP(string instancia, double threshold, double determinismo, int tiempoMaximo, int intentos){	
 			ifstream archivo(instancia);
 			string gen;
  
@@ -130,11 +131,12 @@ class GRASP{
 			th = threshold;
 			det = determinismo;
 			tMAx = tiempoMaximo;
+			intentosExtra = intentos;
 			rng.seed(time(NULL));
 		}
 
 		pair<int, int> iniciar(){
-			int ti = time(NULL);
+			ti = time(NULL);
 			pair<string, int> solActual = {" ", -1};
 			procesarIndices();
 			int tf;
@@ -158,16 +160,17 @@ class GRASP{
 int main(int argc, char *argv[]){
 	string instancia = "instancias/100-300-001.txt";
 	double threshold = 0.80, determinismo = 0.9;
-	int tiempoMaximo = 30;
+	int tiempoMaximo = 90, intentosExtra = 20;
 	
 	for(int i=0; i<argc; i++){
 		if( !strcmp(argv[i], "-i" ) ) instancia = argv[i+1];
 		if( !strcmp(argv[i], "-th") ) threshold = atof(argv[i+1]);
 		if( !strcmp(argv[i], "-d" ) ) determinismo = atof(argv[i+1]);
 		if( !strcmp(argv[i], "-t" ) ) tiempoMaximo = atoi(argv[i+1]);
+		if( !strcmp(argv[i], "-ie" ) ) intentosExtra = atoi(argv[i+1]);
 	}
 
-	GRASP g(instancia, threshold, determinismo, tiempoMaximo);
+	GRASP g(instancia, threshold, determinismo, tiempoMaximo, intentosExtra);
 	g.iniciar();
 	return 0;
 }

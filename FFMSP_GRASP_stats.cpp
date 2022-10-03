@@ -16,13 +16,13 @@ using namespace std;
 using namespace chrono;
 
 
-void stats(double th);
+void stats(double th, double det, int tmax, int intentos);
 
 mutex mtx;
 vector<int> calidades;
 vector<int> tiempos;
-void funcionHilos(string instancia, double threshold, double determinismo, int tiempoMaximo){
-	GRASP g(instancia, threshold, determinismo, tiempoMaximo);
+void funcionHilos(string instancia, double threshold, double determinismo, int tiempoMaximo, int intentos){
+	GRASP g(instancia, threshold, determinismo, tiempoMaximo, intentos);
 	auto aux = g.iniciar();
 	
 	mtx.lock();
@@ -32,25 +32,26 @@ void funcionHilos(string instancia, double threshold, double determinismo, int t
 }
 
 int main(int argc, char *argv[]){
-	string instancia = "100-300-001.txt";
-	double threshold = 0.85, determinismo = 0.9;
-	int tiempoMaximo = 30;
+	string instancia = "instancias/100-300-001.txt";
+	double threshold = 0.80, determinismo = 0.9;
+	int tiempoMaximo = 90, intentosExtra = 20;
 	
 	for(int i=0; i<argc; i++){
 		if( !strcmp(argv[i], "-i" ) ) instancia = argv[i+1];
 		if( !strcmp(argv[i], "-th") ) threshold = atof(argv[i+1]);
 		if( !strcmp(argv[i], "-d" ) ) determinismo = atof(argv[i+1]);
 		if( !strcmp(argv[i], "-t" ) ) tiempoMaximo = atoi(argv[i+1]);
+		if( !strcmp(argv[i], "-ie" ) ) intentosExtra = atoi(argv[i+1]);
 	}
 
 	srand(time(NULL));
-	stats(threshold);
+	stats(threshold, determinismo, tiempoMaximo, intentosExtra);
 
 	return 0;
 }
 
 
-void stats(double th){
+void stats(double th, double det, int tmax, int intentos){
 	vector<string> genomas = {"100-300", "100-600", "100-800", "200-300", "200-600", "200-800"};
 	vector<string> genomas2 = {"-001", "-002", "-003", "-004", "-005", "-006", "-007", "-008", "-009", "-010"};
 
@@ -69,7 +70,7 @@ void stats(double th){
 		
 		for(int i=0; i<hilos; i++){
 			string instancia = "instancias/" + in + genomas2[i] + ".txt";
-			thread aux(funcionHilos, instancia, th, 0.9, 300);
+			thread aux(funcionHilos, instancia, th, det, tmax, intentos);
 			t.push_back( move(aux) );
 		}
 		for(int i=0; i<t.size(); i++) t[i].join();
@@ -112,3 +113,15 @@ void stats(double th){
 	cout << "Tiempo desviacion" << endl;
 	for(auto a: TiempoDesviacion) cout << a << endl;
 }
+
+/* VERIFICACION SOLUCION
+vector<int> hamming2(dataset.size());
+for(int i=0; i<dataset.size(); i++){
+	for(int j=0; j<dataset[i].size(); j++){
+		if(dataset[i][j] != solNueva.first[j]) hamming2[i]++;
+	}
+}
+int calAux = 0;
+for(auto h: hamming2) if(h >= (int)(th*m)) calAux++;				
+if(calAux != solNueva.second) cout << calAux << " asddddddddddddddddddddddddddddddddddddd " << solNueva.second << endl;
+*/
