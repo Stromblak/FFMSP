@@ -87,7 +87,7 @@ class GRASP{
 			int mejorCal = solucion.second;
 			int intentos = 5;
 
-			while(intentos && time(NULL) - ti <= tMAx){
+			while(intentos && time(NULL) - ti <= tMAx && mejorCal != n){
 
 				for(int col: indices){  // para cada columna
 					for(int i=0; i<n; i++) if(dataset[i][col] != sol[col]) hamming[i]--;
