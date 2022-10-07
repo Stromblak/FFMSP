@@ -175,8 +175,10 @@ int main(int argc, char *argv[]){
 		if( !strcmp(argv[i], "-d" ) ) determinismo = atof(argv[i+1]);
 		if( !strcmp(argv[i], "-t" ) ) tiempoMaximo = atoi(argv[i+1]);
 		if( !strcmp(argv[i], "-ie" ) ) intentosExtra = atoi(argv[i+1]);
+
 		if( !strcmp(argv[i], "-tuning" ) ) tuning = atoi(argv[i+1]);
 		if( !strcmp(argv[i], "-pm" ) ) probMAx = atof(argv[i+1]);
+		if( !strcmp(argv[i], "-a" ) ) a = atof(argv[i+1]);
 	}
 
 	GRASP g(instancia, threshold, determinismo, tiempoMaximo, intentosExtra, tuning);
