@@ -18,13 +18,15 @@ using namespace std::chrono;
 minstd_rand rng;
 
 double pg = 1, determinismo = 0;
-int nb = 10;
+int nb = 10, tSopa = 50;
 
-int torneos = 10, poblacion = 100;
+int torneos = 10, torneos2 = 0, poblacion = 100;
 
-double pm = 0.50, pm2 = 0.005;
+double pm = 0.30, pm2 = 0.005;
 double pc = 0.50, pc2 = 0.50;
 double pt = 0.20, pt2 = 0.10;
+double ef = 0.9;
+
 
 
 class GRASP{
@@ -191,7 +193,7 @@ class Bacteria{
 		}
 
 		void mutar(){
-			for(int i=0; i<tamSol; i++) if(rng()%1000 < pm2*1000) solucion[i] = bases[rng()%4];
+			for(int i=0; i<tamSol; i++) if(rng()%10000 < pm2*10000) solucion[i] = bases[rng()%4];
 			/*
 			int tamMut = porcentajeMut*tamSol;
 			int ini = min((int)(rng()%tamSol), tamSol-tamMut);
@@ -236,6 +238,8 @@ class Bacteria{
 				if(rand()%2) solucion[i] = sol1[i];
 				else solucion[i] = sol2[i];
 			}
+
+			mutar();
 			
 			return solVieja;
 		}
@@ -245,10 +249,10 @@ class Bacteria{
 class Sim{
 	private:
 		GRASP *grasp;
-		int antibiotico, iter;
+		int antibiotico;
 		vector<Bacteria> bacterias;
 		vector<int> donadoras, receptoras;
-		vector<string> matGenetico;
+		vector<string> sopa;
 		
 
 		void generarPoblacion(){
@@ -308,66 +312,113 @@ class Sim{
 		}
 
 		void transformacion(){
-			if(matGenetico.empty()) return;
-
 			for(Bacteria &b: bacterias){
 				if(rng()%100 < pt*100) {
-					string donacion = matGenetico[rng()%matGenetico.size()];
+					string donacion = sopa[rng()%sopa.size()];
 					b.absorber(donacion);
 				}
 			}
 		}
 
 		void administrarAntibiotico(){
-			if(iter%10 == 0) matGenetico.clear();
 			if(donadoras.empty()) return;
 			
 			for(int i: receptoras){
-				if(bacterias[i].fitness <= antibiotico){
+				if(bacterias[i].fitness <= antibiotico && rng()%100 < ef*100){
 					int don1 = donadoras[rng()%donadoras.size()];
 					int don2 = donadoras[rng()%donadoras.size()];
 
 					string sol1 = bacterias[don1].solucion;
 					string sol2 = bacterias[don2].solucion;
 
-					matGenetico.push_back( bacterias[i].lazaro(sol1, sol2) );
+					sopa[rng()%sopa.size()] = bacterias[i].lazaro(sol1, sol2);
+
+					/*
+					
+					int pos = rng()%sopa.size();
+					string b1 = bacterias[i].lazaro(sol1, sol2);
+
+					for(int j=0; j<b1.size(); j++){
+						if(rng()%2) sopa[pos][j] = b1[j]; 
+					}
+					*/
+					
 				}
 			}
-
-			vector<string> aux;
-			for(int i=1; i<matGenetico.size(); i += 2){
-				string nuevo;
-				for(int j=0; j<matGenetico[0].size(); j++){
-					if(rng()%2 == 0) nuevo.push_back(matGenetico[i-1][j]);
-					else nuevo.push_back(matGenetico[i][j]);
-				}
-				aux.push_back(nuevo);
-			}
-
-			matGenetico = aux;
 			
 			receptoras.clear();
 			donadoras.clear();
+		}
+
+		void variacionForzada(){
+			for(int i=0; i<tSopa; i++){
+				sopa.clear();
+				auto a = grasp->generarSolRandom();
+				sopa.push_back(a.first); 
+			}
+
+			for(Bacteria &b: bacterias) b.mutar();
+		}
+
+		void torneo(){
+			for(int i=0; i<torneos2; i++){
+				int b1 = rng()%poblacion;
+				int b2 = rng()%poblacion;
+				int b3 = rng()%poblacion;
+				int b4 = rng()%poblacion;
+
+				int h1, h2;
+				string p1, p2;
+
+
+				if(bacterias[b1].fitness > bacterias[b2].fitness){
+					p1 = bacterias[b1].solucion;
+					h1 = b2;
+				}else{
+					p1 = bacterias[b2].solucion;
+					h1 = b1;
+				}
+
+				if(bacterias[b3].fitness > bacterias[b4].fitness){
+					p2 = bacterias[b3].solucion;
+					h2 = b4;
+				}else{			
+					p2 = bacterias[b4].solucion;
+					h2 = b3;
+				}
+
+				sopa[rng()%sopa.size()] = bacterias[h1].lazaro(p1, p2);
+				sopa[rng()%sopa.size()] = bacterias[h2].lazaro(p1, p2);
+
+				int nuevoFitness = grasp->calcularCalidad( bacterias[h1].solucion );
+				bacterias[h1].fitness = nuevoFitness;
+
+				nuevoFitness = grasp->calcularCalidad( bacterias[h2].solucion );
+				bacterias[h2].fitness = nuevoFitness;
+			}
 		}
 
 	public:
 		Sim(string instancia, double threshold, double determinismo){
 			grasp = new GRASP(instancia, threshold, determinismo);
 			antibiotico = 0;
-			iter = 0;
+
+			for(int i=0; i<tSopa; i++){
+				auto a = grasp->generarSolRandom();
+				sopa.push_back(a.first); 
+			}
 		}
 
 		int iniciar(){
 			int ti = time(NULL);
-			int iter = 100000;
 			generarPoblacion();
 
 			int mejorFit = 0;
 
 			while(time(NULL) - ti <= 90){
-				iter += 1;
 
 				crearAntibiotico();
+
 				
 				transformacion();
 				mutacion();
@@ -375,15 +426,20 @@ class Sim{
 				clasificacion();
 				conjugacion();
 
+
 				int fit = evaluarFitness();
+				cout << fit << " " << antibiotico << endl;
 				if(fit > mejorFit){
 					cout << fit << endl;
 					mejorFit = fit;
 				}
-				
-				if(fit <= antibiotico) break;
+
+
+				torneo();
+				//if(fit <= antibiotico) variacionForzada();
 
 				administrarAntibiotico();
+
 			}
 			cout << "fin" << endl;
 			return mejorFit;
@@ -391,7 +447,7 @@ class Sim{
 };
 
 
-atomic_int promedio = 0;
+atomic_int promedio;
 void funcionHilos(string instancia, double threshold, double determinismo){
 	Sim s(instancia, threshold, determinismo);
 	promedio += s.iniciar();
@@ -399,6 +455,7 @@ void funcionHilos(string instancia, double threshold, double determinismo){
 
 
 int main(int argc, char *argv[]){
+	promedio = 0;
 	
 	auto now = high_resolution_clock::now();
 	auto nanos = duration_cast<nanoseconds>(now.time_since_epoch()).count();
@@ -419,7 +476,11 @@ int main(int argc, char *argv[]){
 		if( !strcmp(argv[i], "-p" ) ) poblacion = atoi(argv[i+1]);
 	}
 
+	Sim s(instancia, threshold, determinismo);
+	int cal = s.iniciar();
+	cout << "r: " << cal << endl;
 
+	/*
 	int hilos = 10;
 	vector<thread> t;
 	vector<string> genomas = {"100-300", "100-600", "100-800", "200-300", "200-600", "200-800"};
@@ -434,6 +495,6 @@ int main(int argc, char *argv[]){
 
 	cout << "Promedio: " << (double)(promedio)/hilos << endl;
 
-
+	*/
 	return 0;
 }
