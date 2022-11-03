@@ -30,12 +30,12 @@ double pc = 0.75;
 double pt = 0.10;
 double ef = 0.95;
 
-double determinismo = 0;
-int torneos2 = 0;
+double determinismo = 0.5;
+int torneos2 = 10;
+int re = 0;
 
 
-
-class GRASP{
+class DATASET{
 	private:
 		vector<string> dataset;
 		vector<int> hamming, indices;
@@ -148,7 +148,7 @@ class GRASP{
 
 
 	public:
-		GRASP(string instancia){	
+		DATASET(string instancia){	
 			ifstream archivo(instancia);
 			string gen;
  
@@ -184,37 +184,45 @@ class GRASP{
 			return cal;
 		}
 
-		char baseRandom(int i){
+		char baseRandom(int i, char c){
+			//char a = bases[rng()%4];
+			//while(a == c) a = bases[rng()%4];
+			//return a;
+
 			vector<pair<int, char>> v;
-			for(auto m: posiciones[i]){
-				for(char c: bases){
-					v.push_back( {300 - posiciones[i][c].size(), c} );
+
+			for(char c: bases){
+				v.push_back( {m - posiciones[i][c].size(), c} );
+			}
+
+			//sort(v.begin(), v.end());
+			//reverse(v.begin(), v.end());
+
+			char b;
+			int acum = 0;
+			int r = rng()%(3*m);
+			for(int i=0; i<v.size(); i++){
+				acum += v[i].first;
+				if(r <= acum){
+					b = v[i].second;
+					if(b == c) b = v[(i+1)%4].second;
+
+					return b;
 				}
 			}
 
-			sort(v.begin(), v.end());
-			reverse(v.begin(), v.end());
-
-			int r = rng()%900;
-
-			int acum = 0;
-			for(auto a: v){
-				acum += a.first;
-				if(r <= acum) return a.second;
-			}
-
-			return bases[rng()%4];
+			return 'A';
 		}
 };
 
 
 class Bacteria{
 	public:
-		GRASP *grasp;
+		DATASET *grasp;
 		string solucion;
 		int fitness;
 
-		Bacteria(string sol, int fit, GRASP *g){
+		Bacteria(string sol, int fit, DATASET *g){
 			solucion = sol;
 			fitness = fit;
 			grasp = g;
@@ -223,11 +231,11 @@ class Bacteria{
 		void mutar(){
 			for(int i=0; i<solucion.size(); i++){
 				if(rng()%100 < pm*100){
-					char c = bases[rng()%4];
-					while(c == solucion[i]) c = bases[rng()%4];
+					//char c = bases[rng()%4];
+					//while(c == solucion[i]) c = bases[rng()%4];
 
-					if(rng()%100 < 100) c = grasp->baseRandom(i);
-					solucion[i] = c;
+					//if(rng()%100 < 100) c = grasp->baseRandom(i);
+					solucion[i] = grasp->baseRandom(i, solucion[i]);
 				}
 			}
 		}
@@ -262,8 +270,8 @@ class Bacteria{
 
 class Sim{
 	private:
-		GRASP *grasp;
-		int antibiotico, mejor;
+		DATASET *grasp;
+		int antibiotico, mejor, ti;
 		vector<Bacteria> bacterias;
 		vector<int> donadoras, receptoras;
 		queue<string> sopa;
@@ -314,7 +322,10 @@ class Sim{
 		}
 
 		void conjugacion(){
-			if(donadoras.empty()) return;
+			if(donadoras.empty()){
+				mutacion();
+				return;
+			}
 
 			for(int i: receptoras){
 				if(rng()%100 < pc*100){
@@ -322,7 +333,6 @@ class Sim{
 					bacterias[i].conjugar(donacion);
 				}
 			}
-
 		}
 
 		void transformacion(){
@@ -355,6 +365,7 @@ class Sim{
 					bacterias[b1].mutar();
 
 				}
+			}else{
 			}
 
 			receptoras.clear();
@@ -388,26 +399,45 @@ class Sim{
 					h2 = b3;
 				}
 
-				sopa.push( bacterias[h1].lazaro(p1, p2) );
-				sopa.push( bacterias[h2].lazaro(p1, p2) );
-
-				int nuevoFitness = grasp->calcularCalidad( bacterias[h1].solucion );
-				bacterias[h1].fitness = nuevoFitness;
-
-				nuevoFitness = grasp->calcularCalidad( bacterias[h2].solucion );
-				bacterias[h2].fitness = nuevoFitness;
+				bacterias[h1].lazaro(p1, p2);
+				bacterias[h2].lazaro(p1, p2);
 			}
+		}
+
+		void r(){
+			for(int i=0; i<re; i++){
+				int b1 = rng()%poblacion;
+				int b2 = rng()%poblacion;				
+
+				string s1 = bacterias[b1].solucion;
+				string s2 = bacterias[b2].solucion;
+
+				for(int j=0; j<s1.size(); j++){
+					if(rng()%2){
+						char aux = s1[j];
+						s1[j] = s2[j];
+						s2[j] = aux;
+					}
+				}
+
+				bacterias[b1].solucion = s1;
+				bacterias[b1].mutar();
+
+				bacterias[b2].solucion = s2;
+				bacterias[b2].mutar();
+			}
+
 		}
 
 	public:
 		Sim(string instancia){
-			grasp = new GRASP(instancia);
+			ti = time(NULL);
+			grasp = new DATASET(instancia);
 			antibiotico = 0;
 			mejor = 0;
 		}
 
 		int iniciar(){
-			int ti = time(NULL);
 			generarPoblacion();
 
 			while(time(NULL) - ti <= tiempoMaximo){
@@ -420,6 +450,7 @@ class Sim{
 				conjugacion();				
 
 				torneo();
+				r();
 				int fit = evaluarFitness();		
 
 				if(fit > mejor){
@@ -439,7 +470,7 @@ class Sim{
 };
 
 
-int main2(int argc, char *argv[]){
+int main(int argc, char *argv[]){
 	rng.seed(time(NULL));
 
 	for(int i=0; i<argc; i++){
@@ -457,6 +488,8 @@ int main2(int argc, char *argv[]){
 		if( !strcmp(argv[i], "-pc" ) ) pc = atof(argv[i+1]);
 
 		if( !strcmp(argv[i], "-pt" ) ) pt = atof(argv[i+1]);
+
+		if( !strcmp(argv[i], "-ef" ) ) ef = atof(argv[i+1]);
 
 		if( !strcmp(argv[i], "-pg" ) ) pg = atof(argv[i+1]);
 		if( !strcmp(argv[i], "-nb" ) ) nb = atoi(argv[i+1]);
