@@ -16,23 +16,24 @@ string instancia = "instancias/100-300-001.txt";
 double threshold = 0.80;
 int tiempoMaximo = 90;
 int tuning = 0, update = 1;
+double determinismo = 0;
 minstd_rand rng;
 
 
 // Variables
 int poblacion = 1000;
 int torneos = 17;
-double pg = 0.05;
-int nb = 90;
+double pg = 0.01;
+int nb = 40;
 
-double pm = 0.01;
+double pm = 0.005;
 double pc = 0.75;
 double pt = 0.10;
 double ef = 0.95;
 
-double determinismo = 0.0;
 double reg = 0.00;
 
+int br = 1;
 
 class Dataset{
 	private:
@@ -194,22 +195,10 @@ class Dataset{
 		}
 
 		char baseRandom(int i, char c){
-			char a = bases[rng()%4];
+			int j = rng()%4;
+			char a = bases[j];
 			while(a == c) a = bases[rng()%4];
 			return a;
-
-			char b;
-			int acum = 0, r = rng()%(3*m);
-			for(int j=0; j<4; j++){
-				acum += pesos[i][j].first;
-				if(r <= acum){
-					b = pesos[i][j].second;
-					if(b == c) b = pesos[i][(j+1)%4].second;
-					break;
-				}
-			}
-
-			return b;
 		}
 };
 
@@ -230,7 +219,7 @@ class Bacteria{
 
 		void mutar(){
 			for(int i=0; i<solucion.size(); i++){
-				if(rng()%100 < pm*100) solucion[i] = dataset->baseRandom(i, solucion[i]);
+				if(rng()%1000 < pm*1000) solucion[i] = dataset->baseRandom(i, solucion[i]);
 			}
 			cambio = 1;
 		}
@@ -285,7 +274,7 @@ class Sim{
 			pair<string, int> p;
 
 			for(int i=0; i<poblacion; i++){
-				if(rng()%100 < pg*100) p = dataset->generarSol( rng()%nb );
+				if(rng()%100 < pg*100) p = dataset->generarSol( nb );
 				else p = dataset->generarSolRandom();
 				bacterias.push_back( Bacteria(p.first, p.second, dataset) );
 			}
@@ -322,7 +311,7 @@ class Sim{
 		}
 
 		void mutacion(){
-			for(Bacteria &b: bacterias) if(rng()%100 < pm*100) b.mutar();
+			for(Bacteria &b: bacterias) if(rng()%1000 < pm*1000) b.mutar();
 			
 			//double aux = pm;
 			//pm *= 2;
@@ -465,3 +454,10 @@ class Sim{
 			return mejor;
 		}
 };
+
+int main(){
+	Sim sim(instancia);
+
+	sim.iniciar();
+	return 0;
+}
