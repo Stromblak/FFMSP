@@ -31,9 +31,9 @@ double pc = 0.75;
 double pt = 0.10;
 double ef = 0.95;
 
-double reg = 0.00;
+double reg = 0;
+double bl = 0.02;
 
-int br = 1;
 
 class Dataset{
 	private:
@@ -194,6 +194,36 @@ class Dataset{
 			return cal;
 		}
 
+		pair<string, int> busquedaLocal2(string sol){
+			vector<int> hamming2(n, m);
+			for(int i=0; i<m; i++) for(int j: posiciones[i][sol[i]]) hamming2[j]--;
+
+			int cal = 0;
+			for(int h: hamming2) if(h >= th_m) cal++;
+
+
+			for(int col: indices){
+				if( !(rng()%100 < bl*100) ) continue;
+
+				for(int i=0; i<n; i++) if(dataset[i][col] != sol[col]) hamming2[i]--;
+
+				for(char base: bases){
+					calidadBase[base] = 0;
+					
+					for(int i=0; i<n; i++){
+						int dif = 0;
+						if(base != dataset[i][col]) dif = 1;
+						if(hamming2[i] + dif >= (int)(th*m)) calidadBase[base]++;
+					}
+				}
+				sol[col] = encontrarMejorBase(col);
+				
+				for(int i=0; i<n; i++) if(dataset[i][col] != sol[col]) hamming2[i]++;
+			}
+
+			return pair<string, int>{sol, cal};
+		}
+
 		char baseRandom(int i, char c){
 			int j = rng()%4;
 			char a = bases[j];
@@ -232,6 +262,12 @@ class Bacteria{
 		void transformar(string donacion){
 			for(int i=0; i<solucion.size(); i++) if(rng()%100 < pt*100) solucion[i] = donacion[i];
 			cambio = 1;
+		}
+
+		void bl(){
+			auto p = dataset->busquedaLocal2(solucion);
+			solucion = p.first;
+			fitness = p.second;
 		}
 
 		int actualizarFitness(){
@@ -422,6 +458,10 @@ class Sim{
 			}
 		}
 
+		void bl2(){
+			for(Bacteria &b: bacterias) if(rng()%100 < bl*100) b.bl();
+		}
+
 	public:
 		Sim(string instancia){
 			ti = time(NULL);
@@ -444,6 +484,7 @@ class Sim{
 
 				torneo();
 				r();
+				bl2();
 
 				evaluarFitness();	
 				administrarAntibiotico();
