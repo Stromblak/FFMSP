@@ -11,39 +11,40 @@
 using namespace std;
 
 
-// Variables Obligatorias
+// Parametros
 string instancia = "instancias/100-300-001.txt";
-char bases[4] = {'A', 'C', 'G', 'T'};
-
 double threshold = 0.80;
 int tiempoMaximo = 90;
-int tuning = 0;
+int tuning = 0, update = 1;
 minstd_rand rng;
 
-// Variables
-int poblacion = 500;
-int torneos = 17, nb = 90;
-double pg = 0.1;
 
-double pm = 0.02;
+// Variables
+int poblacion = 1000;
+int torneos = 17;
+double pg = 0.05;
+int nb = 90;
+
+double pm = 0.01;
 double pc = 0.75;
 double pt = 0.10;
 double ef = 0.95;
 
-double determinismo = 0.5;
-int torneos2 = 10;
-int re = 0;
+double determinismo = 0.0;
+double reg = 0.00;
 
 
-class DATASET{
+class Dataset{
 	private:
+		vector<char> bases{'A', 'C', 'G', 'T'};
 		vector<string> dataset;
 		vector<int> hamming, indices;
-		vector<unordered_map<char, int>> contador;
 		unordered_map<char, int> calidadBase;
+		vector<unordered_map<char, int>> contador;
 		vector<unordered_map<char, vector<int>>> posiciones;
+		vector<vector<pair<int, char>>> pesos;
 		double th, det;
-		int n, m;
+		int n, m, th_m;
 
 		void procesarIndices(){
 			contador = vector<unordered_map<char, int>>(m);
@@ -68,6 +69,13 @@ class DATASET{
 
 			indices = vector<int>(m);
 			for(int i=0; i<m; i++) indices[i] = indicesAux[i].second;
+
+			pesos = vector<vector<pair<int, char>>>(m);
+			for(int col=0; col<m; col++){
+				for(char c: bases){
+					pesos[col].push_back( {m - posiciones[col][c].size(), c} );
+				}
+			}
 		}
 		
 		char encontrarMejorBase(int col){
@@ -148,7 +156,7 @@ class DATASET{
 
 
 	public:
-		DATASET(string instancia){	
+		Dataset(string instancia){	
 			ifstream archivo(instancia);
 			string gen;
  
@@ -159,6 +167,7 @@ class DATASET{
 			m = dataset[0].size();
 			th = threshold;
 			det = determinismo;
+			th_m = th*m;
 			procesarIndices();
 		}
 
@@ -169,83 +178,79 @@ class DATASET{
 
 		pair<string, int> generarSolRandom(){
 			string sol(m, ' ');
-			for(int i=0; i<sol.size(); i++) sol[i] = bases[rng()%4];
+			for(char &c: sol) c = bases[rng()%4];
 			int cal = calcularCalidad(sol);
 			return pair<string, int>(sol, cal);
 		}
 
 		int calcularCalidad(string sol){
 			vector<int> hamming2(n, m);
-			for(int i=0; i<sol.size(); i++) for(int j: posiciones[i][sol[i]]) hamming2[j]--;
+			for(int i=0; i<m; i++) for(int j: posiciones[i][sol[i]]) hamming2[j]--;
 
 			int cal = 0;
-			for(auto h: hamming2) if(h >= (int)(th*m)) cal++;
+			for(int h: hamming2) if(h >= th_m) cal++;
 
 			return cal;
 		}
 
 		char baseRandom(int i, char c){
-			//char a = bases[rng()%4];
-			//while(a == c) a = bases[rng()%4];
-			//return a;
-
-			vector<pair<int, char>> v;
-
-			for(char c: bases){
-				v.push_back( {m - posiciones[i][c].size(), c} );
-			}
-
-			//sort(v.begin(), v.end());
-			//reverse(v.begin(), v.end());
+			char a = bases[rng()%4];
+			while(a == c) a = bases[rng()%4];
+			return a;
 
 			char b;
-			int acum = 0;
-			int r = rng()%(3*m);
-			for(int i=0; i<v.size(); i++){
-				acum += v[i].first;
+			int acum = 0, r = rng()%(3*m);
+			for(int j=0; j<4; j++){
+				acum += pesos[i][j].first;
 				if(r <= acum){
-					b = v[i].second;
-					if(b == c) b = v[(i+1)%4].second;
-
-					return b;
+					b = pesos[i][j].second;
+					if(b == c) b = pesos[i][(j+1)%4].second;
+					break;
 				}
 			}
 
-			return 'A';
+			return b;
 		}
 };
 
 
 class Bacteria{
 	public:
-		DATASET *grasp;
+		Dataset *dataset;
 		string solucion;
 		int fitness;
+		int cambio;
 
-		Bacteria(string sol, int fit, DATASET *g){
+		Bacteria(string sol, int fit, Dataset *d){
 			solucion = sol;
 			fitness = fit;
-			grasp = g;
+			dataset = d;
+			cambio = 0;
 		}
 
 		void mutar(){
 			for(int i=0; i<solucion.size(); i++){
-				if(rng()%100 < pm*100){
-					//char c = bases[rng()%4];
-					//while(c == solucion[i]) c = bases[rng()%4];
-
-					//if(rng()%100 < 100) c = grasp->baseRandom(i);
-					solucion[i] = grasp->baseRandom(i, solucion[i]);
-				}
+				if(rng()%100 < pm*100) solucion[i] = dataset->baseRandom(i, solucion[i]);
 			}
+			cambio = 1;
 		}
 
 		void conjugar(string donacion){
 			for(int i=0; i<solucion.size(); i++) if(rng()%100 < pc*100) solucion[i] = donacion[i];
+			cambio = 1;
 		}
 
-		void transmormar(string donacion){
+		void transformar(string donacion){
 			for(int i=0; i<solucion.size(); i++) if(rng()%100 < pt*100) solucion[i] = donacion[i];
+			cambio = 1;
+		}
+
+		int actualizarFitness(){
+			if(cambio){
+				fitness = dataset->calcularCalidad(solucion);
+				cambio = 0;
+			}
+			return fitness;
 		}
 
 		string lazaro(string sol1, string sol2){
@@ -270,7 +275,7 @@ class Bacteria{
 
 class Sim{
 	private:
-		DATASET *grasp;
+		Dataset *dataset;
 		int antibiotico, mejor, ti;
 		vector<Bacteria> bacterias;
 		vector<int> donadoras, receptoras;
@@ -280,22 +285,21 @@ class Sim{
 			pair<string, int> p;
 
 			for(int i=0; i<poblacion; i++){
-				if(rng()%100 < pg*100) p = grasp->generarSol( rng()%nb);
-				else p = grasp->generarSolRandom();
-
-				bacterias.push_back( Bacteria(p.first, p.second, grasp) );
+				if(rng()%100 < pg*100) p = dataset->generarSol( rng()%nb );
+				else p = dataset->generarSolRandom();
+				bacterias.push_back( Bacteria(p.first, p.second, dataset) );
 			}
 		}
 
-		int evaluarFitness(){
-			int mejorFitness = 0;
+		void evaluarFitness(){
+			int mejorFit = 0;
+			for(Bacteria &b: bacterias) mejorFit = max(mejorFit, b.actualizarFitness());
 
-			for(Bacteria &b: bacterias){
-				int nuevoFitness = grasp->calcularCalidad( b.solucion );
-				b.fitness = nuevoFitness;
-				mejorFitness = max(nuevoFitness, mejorFitness);
+			if(mejorFit > mejor){
+				mejor = mejorFit;
+				if(!tuning) cout << mejor << endl;
 			}
-			return mejorFitness;
+			if(!tuning && update) cout << mejorFit << " " << antibiotico << endl;
 		}
 
 		void crearAntibiotico(){
@@ -319,6 +323,13 @@ class Sim{
 
 		void mutacion(){
 			for(Bacteria &b: bacterias) if(rng()%100 < pm*100) b.mutar();
+			
+			//double aux = pm;
+			//pm *= 2;
+			//for(int i=0; i<poblacion*0.5; i++) if(rng()%100 < pm*100) bacterias[i].mutar();
+
+			//pm = aux;
+			//for(int i=poblacion*0.5; i<poblacion; i++) if(rng()%100 < pm*100) bacterias[i].mutar();
 		}
 
 		void conjugacion(){
@@ -337,7 +348,7 @@ class Sim{
 
 		void transformacion(){
 			while(!sopa.empty()){
-				if(rng()%100 < pt*100) bacterias[ rng()%bacterias.size() ].transmormar(sopa.front());
+				if(rng()%100 < pt*100) bacterias[ rng()%bacterias.size() ].transformar(sopa.front());
 				sopa.pop();
 			}
 		}
@@ -365,7 +376,6 @@ class Sim{
 					bacterias[b1].mutar();
 
 				}
-			}else{
 			}
 
 			receptoras.clear();
@@ -373,7 +383,7 @@ class Sim{
 		}
 
 		void torneo(){
-			for(int i=0; i<torneos2; i++){
+			for(int i=0; i<0; i++){
 				int b1 = rng()%poblacion;
 				int b2 = rng()%poblacion;
 				int b3 = rng()%poblacion;
@@ -405,34 +415,28 @@ class Sim{
 		}
 
 		void r(){
-			for(int i=0; i<re; i++){
-				int b1 = rng()%poblacion;
-				int b2 = rng()%poblacion;				
+			for(Bacteria &b: bacterias){
+				if(rng()%100 < reg*100){
+					int b2 = rng()%poblacion;
 
-				string s1 = bacterias[b1].solucion;
-				string s2 = bacterias[b2].solucion;
-
-				for(int j=0; j<s1.size(); j++){
-					if(rng()%2){
-						char aux = s1[j];
-						s1[j] = s2[j];
-						s2[j] = aux;
+					for(int j=0; j<b.solucion.size(); j++){
+						if(rng()%2){
+							char aux = bacterias[b2].solucion[j];
+							b.solucion[j] = bacterias[b2].solucion[j];
+							bacterias[b2].solucion[j] = aux;
+						}
 					}
+
+					b.mutar();
+					bacterias[b2].mutar();
 				}
-
-				bacterias[b1].solucion = s1;
-				bacterias[b1].mutar();
-
-				bacterias[b2].solucion = s2;
-				bacterias[b2].mutar();
 			}
-
 		}
 
 	public:
 		Sim(string instancia){
 			ti = time(NULL);
-			grasp = new DATASET(instancia);
+			dataset = new Dataset(instancia);
 			antibiotico = 0;
 			mejor = 0;
 		}
@@ -451,16 +455,9 @@ class Sim{
 
 				torneo();
 				r();
-				int fit = evaluarFitness();		
 
-				if(fit > mejor){
-					if(!tuning) cout << fit << endl;
-					mejor = fit;
-				}
-
+				evaluarFitness();	
 				administrarAntibiotico();
-
-				//cout << fit << " " << antibiotico << endl;
 			}
 			
 			if(!tuning) cout << "fin " << mejor << endl;
@@ -468,38 +465,3 @@ class Sim{
 			return mejor;
 		}
 };
-
-
-int main(int argc, char *argv[]){
-	rng.seed(time(NULL));
-
-	for(int i=0; i<argc; i++){
-		if( !strcmp(argv[i], "-i" ) ) instancia = argv[i+1];
-		if( !strcmp(argv[i], "-th") ) threshold = atof(argv[i+1]);
-		if( !strcmp(argv[i], "-d" ) ) determinismo = atof(argv[i+1]);
-		if( !strcmp(argv[i], "-t" ) ) tiempoMaximo = atof(argv[i+1]);
-		if( !strcmp(argv[i], "-tuning" ) ) tuning = atof(argv[i+1]);
-
-		// Variables
-		if( !strcmp(argv[i], "-p" ) ) poblacion = atoi(argv[i+1]);
-
-		if( !strcmp(argv[i], "-pm" ) ) pm = atof(argv[i+1]);
-
-		if( !strcmp(argv[i], "-pc" ) ) pc = atof(argv[i+1]);
-
-		if( !strcmp(argv[i], "-pt" ) ) pt = atof(argv[i+1]);
-
-		if( !strcmp(argv[i], "-ef" ) ) ef = atof(argv[i+1]);
-
-		if( !strcmp(argv[i], "-pg" ) ) pg = atof(argv[i+1]);
-		if( !strcmp(argv[i], "-nb" ) ) nb = atoi(argv[i+1]);
-
-		if( !strcmp(argv[i], "-torneos" ) ) torneos2 = atoi(argv[i+1]);
-
-	}
-
-	Sim s(instancia);
-	s.iniciar();
-
-	return 0;
-}
